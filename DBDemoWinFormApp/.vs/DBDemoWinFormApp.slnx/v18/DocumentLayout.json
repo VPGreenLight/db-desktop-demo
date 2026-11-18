@@ -3,24 +3,52 @@
   "WorkspaceRootPath": "C:\\Projects\\CSDL\\db-desktop-demo\\DBDemoWinFormApp\\",
   "Documents": [
     {
+      "AbsoluteMoniker": "D:0:0:{EE993868-9A9B-C227-7499-A3F280A31B51}|DBDemoWinFormApp\\DBDemoWinFormApp.csproj|c:\\projects\\csdl\\db-desktop-demo\\dbdemowinformapp\\dbdemowinformapp\\form4.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{EE993868-9A9B-C227-7499-A3F280A31B51}|DBDemoWinFormApp\\DBDemoWinFormApp.csproj|solutionrelative:dbdemowinformapp\\form4.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{EE993868-9A9B-C227-7499-A3F280A31B51}|DBDemoWinFormApp\\DBDemoWinFormApp.csproj|c:\\projects\\csdl\\db-desktop-demo\\dbdemowinformapp\\dbdemowinformapp\\form4.designer.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{EE993868-9A9B-C227-7499-A3F280A31B51}|DBDemoWinFormApp\\DBDemoWinFormApp.csproj|solutionrelative:dbdemowinformapp\\form4.designer.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{EE993868-9A9B-C227-7499-A3F280A31B51}|DBDemoWinFormApp\\DBDemoWinFormApp.csproj|c:\\projects\\csdl\\db-desktop-demo\\dbdemowinformapp\\dbdemowinformapp\\form4.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}|Form",
+      "RelativeMoniker": "D:0:0:{EE993868-9A9B-C227-7499-A3F280A31B51}|DBDemoWinFormApp\\DBDemoWinFormApp.csproj|solutionrelative:dbdemowinformapp\\form4.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}|Form"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{EE993868-9A9B-C227-7499-A3F280A31B51}|DBDemoWinFormApp\\DBDemoWinFormApp.csproj|C:\\Projects\\CSDL\\db-desktop-demo\\DBDemoWinFormApp\\dbdemowinformapp\\form1.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}|Form",
+      "RelativeMoniker": "D:0:0:{EE993868-9A9B-C227-7499-A3F280A31B51}|DBDemoWinFormApp\\DBDemoWinFormApp.csproj|solutionrelative:dbdemowinformapp\\form1.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}|Form"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{EE993868-9A9B-C227-7499-A3F280A31B51}|DBDemoWinFormApp\\DBDemoWinFormApp.csproj|c:\\projects\\csdl\\db-desktop-demo\\dbdemowinformapp\\dbdemowinformapp\\form2.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{EE993868-9A9B-C227-7499-A3F280A31B51}|DBDemoWinFormApp\\DBDemoWinFormApp.csproj|solutionrelative:dbdemowinformapp\\form2.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{EE993868-9A9B-C227-7499-A3F280A31B51}|DBDemoWinFormApp\\DBDemoWinFormApp.csproj|c:\\projects\\csdl\\db-desktop-demo\\dbdemowinformapp\\dbdemowinformapp\\form3.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{EE993868-9A9B-C227-7499-A3F280A31B51}|DBDemoWinFormApp\\DBDemoWinFormApp.csproj|solutionrelative:dbdemowinformapp\\form3.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
       "AbsoluteMoniker": "D:0:0:{EE993868-9A9B-C227-7499-A3F280A31B51}|DBDemoWinFormApp\\DBDemoWinFormApp.csproj|c:\\projects\\csdl\\db-desktop-demo\\dbdemowinformapp\\dbdemowinformapp\\form1.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{EE993868-9A9B-C227-7499-A3F280A31B51}|DBDemoWinFormApp\\DBDemoWinFormApp.csproj|solutionrelative:dbdemowinformapp\\form1.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{EE993868-9A9B-C227-7499-A3F280A31B51}|DBDemoWinFormApp\\DBDemoWinFormApp.csproj|c:\\projects\\csdl\\db-desktop-demo\\dbdemowinformapp\\dbdemowinformapp\\data\\quanlydbcontext.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{EE993868-9A9B-C227-7499-A3F280A31B51}|DBDemoWinFormApp\\DBDemoWinFormApp.csproj|solutionrelative:dbdemowinformapp\\data\\quanlydbcontext.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{EE993868-9A9B-C227-7499-A3F280A31B51}|DBDemoWinFormApp\\DBDemoWinFormApp.csproj|c:\\projects\\csdl\\db-desktop-demo\\dbdemowinformapp\\dbdemowinformapp\\form2.designer.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{EE993868-9A9B-C227-7499-A3F280A31B51}|DBDemoWinFormApp\\DBDemoWinFormApp.csproj|solutionrelative:dbdemowinformapp\\form2.designer.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{EE993868-9A9B-C227-7499-A3F280A31B51}|DBDemoWinFormApp\\DBDemoWinFormApp.csproj|c:\\projects\\csdl\\db-desktop-demo\\dbdemowinformapp\\dbdemowinformapp\\form2.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}|Form",
+      "RelativeMoniker": "D:0:0:{EE993868-9A9B-C227-7499-A3F280A31B51}|DBDemoWinFormApp\\DBDemoWinFormApp.csproj|solutionrelative:dbdemowinformapp\\form2.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}|Form"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{EE993868-9A9B-C227-7499-A3F280A31B51}|DBDemoWinFormApp\\DBDemoWinFormApp.csproj|c:\\projects\\csdl\\db-desktop-demo\\dbdemowinformapp\\dbdemowinformapp\\form3.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}|Form",
+      "RelativeMoniker": "D:0:0:{EE993868-9A9B-C227-7499-A3F280A31B51}|DBDemoWinFormApp\\DBDemoWinFormApp.csproj|solutionrelative:dbdemowinformapp\\form3.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}|Form"
     },
     {
       "AbsoluteMoniker": "D:0:0:{EE993868-9A9B-C227-7499-A3F280A31B51}|DBDemoWinFormApp\\DBDemoWinFormApp.csproj|c:\\projects\\csdl\\db-desktop-demo\\dbdemowinformapp\\dbdemowinformapp\\form1.designer.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{EE993868-9A9B-C227-7499-A3F280A31B51}|DBDemoWinFormApp\\DBDemoWinFormApp.csproj|solutionrelative:dbdemowinformapp\\form1.designer.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{EE993868-9A9B-C227-7499-A3F280A31B51}|DBDemoWinFormApp\\DBDemoWinFormApp.csproj|C:\\Projects\\CSDL\\db-desktop-demo\\DBDemoWinFormApp\\dbdemowinformapp\\form2.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}|Form",
-      "RelativeMoniker": "D:0:0:{EE993868-9A9B-C227-7499-A3F280A31B51}|DBDemoWinFormApp\\DBDemoWinFormApp.csproj|solutionrelative:dbdemowinformapp\\form2.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}|Form"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{EE993868-9A9B-C227-7499-A3F280A31B51}|DBDemoWinFormApp\\DBDemoWinFormApp.csproj|C:\\Projects\\CSDL\\db-desktop-demo\\DBDemoWinFormApp\\dbdemowinformapp\\form1.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}|Form",
-      "RelativeMoniker": "D:0:0:{EE993868-9A9B-C227-7499-A3F280A31B51}|DBDemoWinFormApp\\DBDemoWinFormApp.csproj|solutionrelative:dbdemowinformapp\\form1.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}|Form"
+      "AbsoluteMoniker": "D:0:0:{EE993868-9A9B-C227-7499-A3F280A31B51}|DBDemoWinFormApp\\DBDemoWinFormApp.csproj|c:\\projects\\csdl\\db-desktop-demo\\dbdemowinformapp\\dbdemowinformapp\\data\\quanlydbcontext.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{EE993868-9A9B-C227-7499-A3F280A31B51}|DBDemoWinFormApp\\DBDemoWinFormApp.csproj|solutionrelative:dbdemowinformapp\\data\\quanlydbcontext.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     }
   ],
   "DocumentGroupContainers": [
@@ -30,11 +58,11 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 3,
+          "SelectedChildIndex": 4,
           "Children": [
             {
               "$type": "Document",
-              "DocumentIndex": 4,
+              "DocumentIndex": 3,
               "Title": "Form1.cs [Design]",
               "DocumentMoniker": "C:\\Projects\\CSDL\\db-desktop-demo\\DBDemoWinFormApp\\DBDemoWinFormApp\\Form1.cs",
               "RelativeDocumentMoniker": "DBDemoWinFormApp\\Form1.cs",
@@ -48,21 +76,133 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 3,
+              "DocumentIndex": 8,
               "Title": "Form2.cs [Design]",
               "DocumentMoniker": "C:\\Projects\\CSDL\\db-desktop-demo\\DBDemoWinFormApp\\DBDemoWinFormApp\\Form2.cs",
               "RelativeDocumentMoniker": "DBDemoWinFormApp\\Form2.cs",
               "ToolTip": "C:\\Projects\\CSDL\\db-desktop-demo\\DBDemoWinFormApp\\DBDemoWinFormApp\\Form2.cs [Design]",
               "RelativeToolTip": "DBDemoWinFormApp\\Form2.cs [Design]",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-11-18T06:00:13.279Z",
+              "WhenOpened": "2026-11-18T13:11:07.618Z",
               "IsPinned": true,
               "EditorCaption": " [Design]",
               "OwnerCaption": "%2"
             },
             {
               "$type": "Document",
+              "DocumentIndex": 9,
+              "Title": "Form3.cs [Design]",
+              "DocumentMoniker": "C:\\Projects\\CSDL\\db-desktop-demo\\DBDemoWinFormApp\\DBDemoWinFormApp\\Form3.cs",
+              "RelativeDocumentMoniker": "DBDemoWinFormApp\\Form3.cs",
+              "ToolTip": "C:\\Projects\\CSDL\\db-desktop-demo\\DBDemoWinFormApp\\DBDemoWinFormApp\\Form3.cs [Design]",
+              "RelativeToolTip": "DBDemoWinFormApp\\Form3.cs [Design]",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-11-18T13:08:35.416Z",
+              "IsPinned": true,
+              "EditorCaption": " [Design]",
+              "OwnerCaption": "%2"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "Form4.cs [Design]",
+              "DocumentMoniker": "C:\\Projects\\CSDL\\db-desktop-demo\\DBDemoWinFormApp\\DBDemoWinFormApp\\Form4.cs",
+              "RelativeDocumentMoniker": "DBDemoWinFormApp\\Form4.cs",
+              "ToolTip": "C:\\Projects\\CSDL\\db-desktop-demo\\DBDemoWinFormApp\\DBDemoWinFormApp\\Form4.cs [Design]",
+              "RelativeToolTip": "DBDemoWinFormApp\\Form4.cs [Design]",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-11-18T16:11:43.528Z",
+              "IsPinned": true,
+              "EditorCaption": " [Design]",
+              "OwnerCaption": "%2"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "Form4.cs",
+              "DocumentMoniker": "C:\\Projects\\CSDL\\db-desktop-demo\\DBDemoWinFormApp\\DBDemoWinFormApp\\Form4.cs",
+              "RelativeDocumentMoniker": "DBDemoWinFormApp\\Form4.cs",
+              "ToolTip": "C:\\Projects\\CSDL\\db-desktop-demo\\DBDemoWinFormApp\\DBDemoWinFormApp\\Form4.cs",
+              "RelativeToolTip": "DBDemoWinFormApp\\Form4.cs",
+              "ViewState": "AgIAAJYAAAAAAAAAAAAmwDkAAAA1AAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-11-18T16:12:07.108Z",
+              "EditorCaption": "",
+              "OwnerCaption": "%2"
+            },
+            {
+              "$type": "Document",
               "DocumentIndex": 1,
+              "Title": "Form4.Designer.cs",
+              "DocumentMoniker": "C:\\Projects\\CSDL\\db-desktop-demo\\DBDemoWinFormApp\\DBDemoWinFormApp\\Form4.Designer.cs",
+              "RelativeDocumentMoniker": "DBDemoWinFormApp\\Form4.Designer.cs",
+              "ToolTip": "C:\\Projects\\CSDL\\db-desktop-demo\\DBDemoWinFormApp\\DBDemoWinFormApp\\Form4.Designer.cs",
+              "RelativeToolTip": "DBDemoWinFormApp\\Form4.Designer.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-11-18T16:12:04.294Z",
+              "EditorCaption": "",
+              "OwnerCaption": "%2"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 7,
+              "Title": "Form2.Designer.cs",
+              "DocumentMoniker": "C:\\Projects\\CSDL\\db-desktop-demo\\DBDemoWinFormApp\\DBDemoWinFormApp\\Form2.Designer.cs",
+              "RelativeDocumentMoniker": "DBDemoWinFormApp\\Form2.Designer.cs",
+              "ToolTip": "C:\\Projects\\CSDL\\db-desktop-demo\\DBDemoWinFormApp\\DBDemoWinFormApp\\Form2.Designer.cs",
+              "RelativeToolTip": "DBDemoWinFormApp\\Form2.Designer.cs",
+              "ViewState": "AgIAABsAAAAAAAAAAAAowAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-11-18T13:18:56.58Z",
+              "EditorCaption": "",
+              "OwnerCaption": "%2"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 6,
+              "Title": "Form1.cs",
+              "DocumentMoniker": "C:\\Projects\\CSDL\\db-desktop-demo\\DBDemoWinFormApp\\DBDemoWinFormApp\\Form1.cs",
+              "RelativeDocumentMoniker": "DBDemoWinFormApp\\Form1.cs",
+              "ToolTip": "C:\\Projects\\CSDL\\db-desktop-demo\\DBDemoWinFormApp\\DBDemoWinFormApp\\Form1.cs",
+              "RelativeToolTip": "DBDemoWinFormApp\\Form1.cs",
+              "ViewState": "AgIAACgAAAAAAAAAAAAgwAUAAAAZAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-11-17T13:28:18.108Z",
+              "EditorCaption": "",
+              "OwnerCaption": "%2"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "Form2.cs",
+              "DocumentMoniker": "C:\\Projects\\CSDL\\db-desktop-demo\\DBDemoWinFormApp\\DBDemoWinFormApp\\Form2.cs",
+              "RelativeDocumentMoniker": "DBDemoWinFormApp\\Form2.cs",
+              "ToolTip": "C:\\Projects\\CSDL\\db-desktop-demo\\DBDemoWinFormApp\\DBDemoWinFormApp\\Form2.cs",
+              "RelativeToolTip": "DBDemoWinFormApp\\Form2.cs",
+              "ViewState": "AgIAACEAAAAAAAAAAAAwwBgAAAAJAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-11-18T13:13:28.694Z",
+              "EditorCaption": "",
+              "OwnerCaption": "%2"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 5,
+              "Title": "Form3.cs",
+              "DocumentMoniker": "C:\\Projects\\CSDL\\db-desktop-demo\\DBDemoWinFormApp\\DBDemoWinFormApp\\Form3.cs",
+              "RelativeDocumentMoniker": "DBDemoWinFormApp\\Form3.cs",
+              "ToolTip": "C:\\Projects\\CSDL\\db-desktop-demo\\DBDemoWinFormApp\\DBDemoWinFormApp\\Form3.cs",
+              "RelativeToolTip": "DBDemoWinFormApp\\Form3.cs",
+              "ViewState": "AgIAAA4AAAAAAAAAAAAgwAcAAAAZAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-11-18T13:16:28.067Z",
+              "EditorCaption": "",
+              "OwnerCaption": "%2"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 11,
               "Title": "QuanLyDbContext.cs",
               "DocumentMoniker": "C:\\Projects\\CSDL\\db-desktop-demo\\DBDemoWinFormApp\\DBDemoWinFormApp\\Data\\QuanLyDbContext.cs",
               "RelativeDocumentMoniker": "DBDemoWinFormApp\\Data\\QuanLyDbContext.cs",
@@ -76,27 +216,13 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 0,
-              "Title": "Form1.cs",
-              "DocumentMoniker": "C:\\Projects\\CSDL\\db-desktop-demo\\DBDemoWinFormApp\\DBDemoWinFormApp\\Form1.cs",
-              "RelativeDocumentMoniker": "DBDemoWinFormApp\\Form1.cs",
-              "ToolTip": "C:\\Projects\\CSDL\\db-desktop-demo\\DBDemoWinFormApp\\DBDemoWinFormApp\\Form1.cs",
-              "RelativeToolTip": "DBDemoWinFormApp\\Form1.cs",
-              "ViewState": "AgIAAAsAAAAAAAAAAAAQwAUAAAAZAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-11-17T13:28:18.108Z",
-              "EditorCaption": "",
-              "OwnerCaption": "%2"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 2,
+              "DocumentIndex": 10,
               "Title": "Form1.Designer.cs",
               "DocumentMoniker": "C:\\Projects\\CSDL\\db-desktop-demo\\DBDemoWinFormApp\\DBDemoWinFormApp\\Form1.Designer.cs",
               "RelativeDocumentMoniker": "DBDemoWinFormApp\\Form1.Designer.cs",
               "ToolTip": "C:\\Projects\\CSDL\\db-desktop-demo\\DBDemoWinFormApp\\DBDemoWinFormApp\\Form1.Designer.cs",
               "RelativeToolTip": "DBDemoWinFormApp\\Form1.Designer.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAGcAAAABAAAAAAAAAA==",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABYAAAAIAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-11-17T13:27:57.572Z",
               "EditorCaption": "",
