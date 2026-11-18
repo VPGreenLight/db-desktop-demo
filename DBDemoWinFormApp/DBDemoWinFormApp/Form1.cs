@@ -54,7 +54,7 @@ namespace DBDemoWinFormApp
         }
 
         /// <summary>
-        /// Sự kiện khi người dùng nhấn nút "Form 2".
+        /// Sự kiện khi người dùng nhấn nút "Form 2 - Bảng NGUOI".
         /// Luồng chuyển màn hình: tạo Form2, gắn sự kiện tự hiện lại Form1 khi Form2 đóng, rồi ẩn Form1 đi.
         /// </summary>
         private void btnSangForm2_Click(object? sender, EventArgs e)
@@ -66,6 +66,21 @@ namespace DBDemoWinFormApp
             form2.FormClosed += (s, args) => this.Show();
 
             form2.Show();
+            this.Hide();
+        }
+
+        /// <summary>
+        /// Sự kiện khi người dùng nhấn nút "Form 3 - Bảng DIEM".
+        /// Luồng chuyển màn hình tương tự Form 2: mở Form3 quản lý bảng DIEM và tự hiện lại Form1 khi đóng.
+        /// </summary>
+        private void btnSangForm3_Click(object? sender, EventArgs e)
+        {
+            Form3 form3 = new Form3();
+
+            // Đóng Form3 thì tự động mở lại đúng cửa sổ Form1 ban đầu.
+            form3.FormClosed += (s, args) => this.Show();
+
+            form3.Show();
             this.Hide();
         }
 
