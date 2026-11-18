@@ -1,4 +1,5 @@
 using DBDemoWinFormApp.Data;
+using DBDemoWinFormApp.Helpers;
 using DBDemoWinFormApp.Models;
 
 namespace DBDemoWinFormApp
@@ -122,7 +123,7 @@ namespace DBDemoWinFormApp
                 return;
             }
 
-            if (!int.TryParse(txtTuoi.Text.Trim(), out int tuoi) || tuoi < 0 || tuoi > 150)
+            if (!InputValidator.DocTuoiHopLe(txtTuoi.Text, out int tuoi))
             {
                 MessageBox.Show("Tuổi phải là số nguyên từ 0 đến 150.", "Sai định dạng", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 txtTuoi.Focus();
@@ -196,7 +197,7 @@ namespace DBDemoWinFormApp
                 return;
             }
 
-            if (!int.TryParse(txtTuoi.Text.Trim(), out int tuoi) || tuoi < 0 || tuoi > 150)
+            if (!InputValidator.DocTuoiHopLe(txtTuoi.Text, out int tuoi))
             {
                 MessageBox.Show("Tuổi phải là số nguyên từ 0 đến 150.", "Sai định dạng", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 txtTuoi.Focus();

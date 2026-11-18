@@ -14,17 +14,18 @@ Tài liệu này được thiết kế gọn nhẹ theo [huongdan SQLSERVER udun
                     │  • Nối với CSDL (OpenConnection)       │
                     │  • Form 2 - Bảng NGUOI                 │
                     │  • Form 3 - Bảng DIEM                  │
+                    │  • Form 4 - Gộp NGUOI & DIEM           │
                     │  • Thoát (Application.Exit)            │
-                    └───────┬────────────────────────┬───────┘
-                            │                        │
-            Bấm "Form 2"    ▼                        ▼    Bấm "Form 3"
-   ┌─────────────────────────────────┐      ┌─────────────────────────────────┐
-   │  Form2 - Quản lý bảng NGUOI     │      │  Form3 - Quản lý bảng DIEM      │
-   │  • Tìm theo địa chỉ (dchi)      │      │  • Tìm theo họ tên (hoten)      │
-   │  • DataGridView (click chọn)    │      │  • DataGridView (click chọn)    │
-   │  • Thêm / Sửa / Xóa (CRUD)      │      │  • Thêm / Sửa / Xóa (CRUD)      │
-   │  • Về Form 1 (Close -> Show)    │      │  • Về Form 1 (Close -> Show)    │
-   └─────────────────────────────────┘      └─────────────────────────────────┘
+                    └───┬───────────────┬────────────────┬───┘
+                        │               │                │
+         Bấm "Form 2"   ▼               ▼  Bấm "Form 3"  ▼  Bấm "Form 4"
+   ┌─────────────────────────┐ ┌─────────────────────┐ ┌───────────────────────────┐
+   │ Form2 - Bảng NGUOI      │ │ Form3 - Bảng DIEM   │ │ Form4 - Gộp NGUOI & DIEM  │
+   │ • Tìm theo địa chỉ      │ │ • Tìm theo họ tên   │ │ • LEFT JOIN 2 bảng        │
+   │ • DataGridView          │ │ • DataGridView      │ │ • Hiển thị 5 cột gộp      │
+   │ • Thêm / Sửa / Xóa      │ │ • Thêm / Sửa / Xóa  │ │ • Thêm / Sửa / Xóa 2 bảng │
+   │ • Về Form 1             │ │ • Về Form 1         │ │ • Về Form 1               │
+   └─────────────────────────┘ └─────────────────────┘ └───────────────────────────┘
 ```
 
 ### Luồng đi của dữ liệu trong mỗi thao tác
@@ -62,12 +63,16 @@ db-desktop-demo/
         ├── Program.cs                  # Điểm chạy đầu tiên, mở Form1
         ├── Models/
         │   ├── Nguoi.cs                # Mô tả 1 dòng của bảng NGUOI(ten, tuoi, dchi)
-        │   └── Diem.cs                 # Mô tả 1 dòng của bảng DIEM(hoten, toan, van)
+        │   ├── Diem.cs                 # Mô tả 1 dòng của bảng DIEM(hoten, toan, van)
+        │   └── NguoiDiemView.cs        # ViewModel chứa 5 cột gộp NGUOI + DIEM cho Form4
+        ├── Helpers/
+        │   └── InputValidator.cs       # Kiểm tra dữ liệu nhập dùng chung (Tuổi, Điểm)
         ├── Data/
         │   └── QuanLyDbContext.cs      # Cầu nối trung tâm tới SQL Server (ConnectionString + DbSet)
-        ├── Form1.cs / .Designer.cs     # Trang chính: Nối với CSDL, sang Form2/Form3, Thoát
+        ├── Form1.cs / .Designer.cs     # Trang chính: Nối với CSDL, sang Form2/Form3/Form4, Thoát
         ├── Form2.cs / .Designer.cs     # Tìm kiếm & Thêm / Sửa / Xóa bảng NGUOI
-        └── Form3.cs / .Designer.cs     # Tìm kiếm & Thêm / Sửa / Xóa bảng DIEM
+        ├── Form3.cs / .Designer.cs     # Tìm kiếm & Thêm / Sửa / Xóa bảng DIEM
+        └── Form4.cs / .Designer.cs     # Gộp (LEFT JOIN) & Thêm / Sửa / Xóa cả NGUOI + DIEM
 ```
 
 ---
@@ -119,6 +124,11 @@ Trên `Form2` (bảng `NGUOI`) và `Form3` (bảng `DIEM`), cả 4 chức năng 
 2. **Vai trò của khóa chính `[Key]` (`ten` và `hoten`)**:
    - Khi nhấp vào 1 dòng trên `DataGridView`, sự kiện `CellClick` điền sẵn dữ liệu xuống 3 ô nhập.
    - Khi bấm **Sửa** hoặc **Xóa**, hàm `db.Nguois.Find(ten)` / `db.Diems.Find(hoten)` dùng **khóa chính** này để tìm chính xác dòng trong SQL Server. Vì vậy không được đổi tên khóa chính khi bấm **Sửa** (muốn đổi tên thì **Xóa** dòng cũ hoặc **Thêm** dòng mới).
+
+### Gộp 2 bảng & Giao dịch đồng bộ trên `Form4`
+
+* **Hiển thị gộp 2 bảng (`LEFT JOIN`)**: `Form4` ghép `db.Nguois` và `db.Diems` theo điều kiện `n.Ten equals d.Hoten` vào lớp `NguoiDiemView` (gồm 5 cột: `Họ tên`, `Tuổi`, `Địa chỉ`, `Điểm Toán`, `Điểm Văn`). Nhờ dùng `LEFT JOIN`, nếu một người đã có ở `NGUOI` nhưng chưa có điểm ở `DIEM` thì vẫn hiện trên bảng với ô điểm để trống.
+* **Thêm / Sửa / Xóa đồng thời 2 bảng trong 1 Transaction**: Khi bấm **Thêm**, **Sửa**, hoặc **Xóa** trên `Form4`, code tác động lên cả `db.Nguois` và `db.Diems` rồi mới gọi **1 lần `db.SaveChanges()`**. EF Core tự động bọc các câu lệnh của cả 2 bảng vào cùng 1 transaction — đảm bảo dữ liệu luôn đồng bộ (cả 2 cùng thành công hoặc cùng hủy nếu có lỗi).
 
 ---
 

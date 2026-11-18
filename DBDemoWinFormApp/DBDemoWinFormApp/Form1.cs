@@ -85,6 +85,21 @@ namespace DBDemoWinFormApp
         }
 
         /// <summary>
+        /// Sự kiện khi người dùng nhấn nút "Form 4 - Gộp NGUOI & DIEM".
+        /// Mở Form4 hiển thị bảng gộp cả thông tin người và điểm, kèm thêm/sửa/xóa đồng thời trên 2 bảng.
+        /// </summary>
+        private void btnSangForm4_Click(object? sender, EventArgs e)
+        {
+            Form4 form4 = new Form4();
+
+            // Đóng Form4 thì tự động mở lại đúng cửa sổ Form1 ban đầu.
+            form4.FormClosed += (s, args) => this.Show();
+
+            form4.Show();
+            this.Hide();
+        }
+
+        /// <summary>
         /// Sự kiện khi người dùng nhấn nút "Thoát".
         /// Kết thúc toàn bộ ứng dụng WinForms.
         /// </summary>

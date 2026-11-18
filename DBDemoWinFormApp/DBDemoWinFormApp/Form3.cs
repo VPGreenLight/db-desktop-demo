@@ -1,5 +1,6 @@
 using System.Globalization;
 using DBDemoWinFormApp.Data;
+using DBDemoWinFormApp.Helpers;
 using DBDemoWinFormApp.Models;
 
 namespace DBDemoWinFormApp
@@ -116,14 +117,14 @@ namespace DBDemoWinFormApp
                 return;
             }
 
-            if (!DocDiemHopLe(txtToan.Text, out double toan))
+            if (!InputValidator.DocDiemHopLe(txtToan.Text, out double toan))
             {
                 MessageBox.Show("Điểm Toán phải là số từ 0 đến 10 (ví dụ: 8.5).", "Sai định dạng", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 txtToan.Focus();
                 return;
             }
 
-            if (!DocDiemHopLe(txtVan.Text, out double van))
+            if (!InputValidator.DocDiemHopLe(txtVan.Text, out double van))
             {
                 MessageBox.Show("Điểm Văn phải là số từ 0 đến 10 (ví dụ: 7.5).", "Sai định dạng", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 txtVan.Focus();
@@ -186,14 +187,14 @@ namespace DBDemoWinFormApp
                 return;
             }
 
-            if (!DocDiemHopLe(txtToan.Text, out double toan))
+            if (!InputValidator.DocDiemHopLe(txtToan.Text, out double toan))
             {
                 MessageBox.Show("Điểm Toán phải là số từ 0 đến 10.", "Sai định dạng", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 txtToan.Focus();
                 return;
             }
 
-            if (!DocDiemHopLe(txtVan.Text, out double van))
+            if (!InputValidator.DocDiemHopLe(txtVan.Text, out double van))
             {
                 MessageBox.Show("Điểm Văn phải là số từ 0 đến 10.", "Sai định dạng", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 txtVan.Focus();
@@ -286,18 +287,6 @@ namespace DBDemoWinFormApp
             {
                 MessageBox.Show("Lỗi khi xóa dữ liệu:\n" + ex.Message, "Lỗi CSDL", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
-        }
-
-        /// <summary>
-        /// Hàm phụ trợ chuyển chuỗi điểm sang số thực hợp lệ (0 - 10).
-        /// Đổi dấu phẩy ',' thành dấu chấm '.' để tránh lỗi khác biệt vùng miền trên Windows tiếng Việt.
-        /// </summary>
-        private static bool DocDiemHopLe(string chuoiDiem, out double ketQua)
-        {
-            string chuanHoa = chuoiDiem.Trim().Replace(',', '.');
-            return double.TryParse(chuanHoa, NumberStyles.Float, CultureInfo.InvariantCulture, out ketQua)
-                && ketQua >= 0
-                && ketQua <= 10;
         }
 
         /// <summary>
