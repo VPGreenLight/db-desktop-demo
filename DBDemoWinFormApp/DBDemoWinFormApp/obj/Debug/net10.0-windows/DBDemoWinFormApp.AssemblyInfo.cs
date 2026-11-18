@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("DBDemoWinFormApp")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+b4320fc6d878954fd4b1b8a730a74547ce212bba")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+6d5eb4d406ac58dca5074f3f6cbeab31f99f3b4d")]
 [assembly: System.Reflection.AssemblyProductAttribute("DBDemoWinFormApp")]
 [assembly: System.Reflection.AssemblyTitleAttribute("DBDemoWinFormApp")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

@@ -1,0 +1,53 @@
+# Visual Studio & .NET / WinForms ignore file
+
+# User-specific files
+*.rsuser
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.vsidx
+
+# Visual Studio cache/options directory
+.vs/
+
+# Build results
+[Dd]ebug/
+[Dd]ebugPublic/
+[Rr]elease/
+[Rr]eleases/
+x64/
+x86/
+[Ww][Ii][Nn]32/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+bld/
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+
+# Visual Studio profiler & temporary files
+*.psess
+*.vsp
+*.vspx
+*.sap
+*.e2e
+*.dbmdl
+*.dbproj.schemaview
+*.jfm
+*.pfx
+*.publishsettings
+*.cache
+*.tmp
+*.temp
+*.nupkg
+*.snupkg
+
+# NuGet / MSBuild artifacts
+project.lock.json
+project.fragment.lock.json
+artifacts/
+StyleCopReport.xml
+_$*
+*$

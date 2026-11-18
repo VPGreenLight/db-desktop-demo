@@ -1,181 +1,148 @@
-# Hướng dẫn kết nối WinForms với SQL Server bằng EF Core `DbContext`
+# Hướng dẫn kết nối WinForms với SQL Server (Phiên bản tối giản cho người mới học)
 
-Tài liệu này tổng hợp và mở rộng từ [huongdan SQLSERVER udung.pdf](./huongdan%20SQLSERVER%20udung.pdf) và đề bài tập thực hành CSDL:
-- **Cơ sở dữ liệu**: `QUANLY` trên SQL Server (`.\SQLEXPRESS`)
-- **2 bảng dữ liệu**:
-  - `NGUOI(ten, tuoi, dchi)`
-  - `DIEM(hoten, toan, van)`
-- **Ứng dụng WinForms (`DBDemoWinFormApp`)**:
-  - **Form1 (Trang chính)**: Kiểm tra kết nối CSDL, chuyển sang `Form2`, nút Thoát.
-  - **Form2**: Chọn bảng (`NGUOI` / `DIEM`), tìm kiếm có tham số (`Parameter`), hiển thị kết quả trên `DataGridView` và thực hiện Thêm / Cập nhật / Xóa (CRUD), nút Quay về `Form1`.
+Tài liệu này được thiết kế gọn nhẹ theo [huongdan SQLSERVER udung.pdf](./huongdan%20SQLSERVER%20udung.pdf) và sơ đồ vở bài tập để giúp người mới dễ học và dễ giảng giải cơ chế kết nối giữa **C# WinForms** và **SQL Server** qua **`DbContext` (Entity Framework Core)**.
 
 ---
 
-## 1. Cấu trúc thư mục dự án
+## 1. Luồng tương tác tổng thể giữa WinForms và Database
+
+Khi người dùng bấm nút trên giao diện, dữ liệu đi qua các tầng theo luồng sau:
+
+```text
+[WinForms UI] (Form1 / Form2)
+      │  1. Người dùng bấm nút ("Nối với CSDL" hoặc "Tìm kiếm")
+      ▼
+[Sự kiện Click] (btnKetNoi_Click / btnTimKiem_Click)
+      │  2. Khởi tạo: using var db = new QuanLyDbContext();
+      ▼
+[QuanLyDbContext] (DbSet<Nguoi>, DbSet<Diem> + ConnectionString)
+      │  3. EF Core dịch câu lệnh C# (LINQ) sang SQL có Parameter (@__diaChi_0)
+      ▼
+[SQL Server - CSDL QUANLY] (Bảng NGUOI, DIEM)
+      │  4. Trả về danh sách các đối tượng Nguoi (List<Nguoi>)
+      ▼
+[DataGridView] (dgvKetQua.DataSource = danhSach)
+```
+
+---
+
+## 2. Cấu trúc thư mục & vai trò từng file
 
 ```text
 db-desktop-demo/
 ├── database/
-│   └── init_quanly.sql                  # Script tạo DB QUANLY, 2 bảng NGUOI & DIEM và dữ liệu mẫu
+│   └── init_quanly.sql              # Script tạo CSDL QUANLY, 2 bảng NGUOI & DIEM và dữ liệu mẫu
 ├── document/
-│   ├── huongdan SQLSERVER udung.pdf     # Tài liệu hướng dẫn gốc
-│   └── README.md                        # Tài liệu hướng dẫn này
+│   ├── huongdan SQLSERVER udung.pdf # Tài liệu hướng dẫn gốc
+│   └── README.md                    # Tài liệu bài giảng này
 └── DBDemoWinFormApp/
-    ├── DBDemoWinFormApp.slnx            # File Solution
+    ├── DBDemoWinFormApp.slnx        # File mở Solution trong Visual Studio
     └── DBDemoWinFormApp/
-        ├── DBDemoWinFormApp.csproj      # Khai báo .NET 10 WinForms & NuGet EF Core
-        ├── Data/
-        │   └── QuanLyDbContext.cs       # Lớp DbContext kết nối WinForms <-> SQL Server
+        ├── Program.cs               # Điểm chạy đầu tiên, mở Form1
         ├── Models/
-        │   ├── Nguoi.cs                 # Model ánh xạ bảng NGUOI
-        │   └── Diem.cs                  # Model ánh xạ bảng DIEM
-        ├── Form1.cs / Form1.Designer.cs # Trang chính: Test kết nối, sang Form2, Thoát
-        ├── Form2.cs / Form2.Designer.cs # Quản lý tìm kiếm & CRUD cho NGUOI / DIEM
-        └── Program.cs                   # Điểm khởi chạy ứng dụng (mở Form1)
+        │   ├── Nguoi.cs             # Mô tả 1 dòng của bảng NGUOI(ten, tuoi, dchi)
+        │   └── Diem.cs              # Mô tả 1 dòng của bảng DIEM(hoten, toan, van)
+        ├── Data/
+        │   └── QuanLyDbContext.cs   # Cầu nối trung tâm tới SQL Server (ConnectionString + DbSet)
+        ├── Form1.cs / .Designer.cs  # Trang chính: Nối với CSDL, Form 2, Thoát
+        └── Form2.cs / .Designer.cs  # Kết quả: Nhập địa chỉ, Tìm kiếm, DataGridView, Về Form 1
 ```
 
 ---
 
-## 2. Bước 1 — Tạo cơ sở dữ liệu `QUANLY` trong SQL Server
+## 3. Hướng dẫn từng bước
 
-1. Mở **SQL Server Management Studio (SSMS)** và đăng nhập vào server (mặc định `.\SQLEXPRESS`, Windows Authentication).
+### Bước 1: Tạo CSDL `QUANLY` trong SQL Server (`database/init_quanly.sql`)
+
+1. Mở **SQL Server Management Studio (SSMS)** và kết nối vào `.\SQLEXPRESS` (Windows Authentication).
 2. Mở file `database/init_quanly.sql` và nhấn **Execute (F5)**.
+3. Script sẽ tạo:
+   - Cơ sở dữ liệu `QUANLY`
+   - Bảng `NGUOI(ten, tuoi, dchi)` với `ten` làm khóa chính (`PRIMARY KEY`)
+   - Bảng `DIEM(hoten, toan, van)` với `hoten` làm khóa chính (`PRIMARY KEY`)
+   - Dữ liệu mẫu (bao gồm các dòng có `dchi = N'HANOI'` giống ví dụ trong vở ghi).
 
-Script sẽ tự động tạo:
-- Database `QUANLY`
-- Bảng `dbo.NGUOI(ten, tuoi, dchi)` với `ten` là `PRIMARY KEY`
-- Bảng `dbo.DIEM(hoten, toan, van)` với `hoten` là `PRIMARY KEY`
-- Dữ liệu mẫu (bao gồm các bản ghi có `dchi = N'HANOI'` giống ví dụ truy vấn `SELECT TUOI FROM NGUOI WHERE DCHI = 'HANOI'`).
+### Bước 2: Thư viện kết nối (`Microsoft.EntityFrameworkCore.SqlServer`)
 
-> **Ghi chú thiết kế khóa chính:** Để giữ nguyên đúng 3 cột như sơ đồ bài tập (`NGUOI(ten, tuoi, dchi)` và `DIEM(hoten, toan, van)`) mà vẫn hỗ trợ EF Core theo dõi cập nhật/xóa (`Find`, `Update`, `Remove`), cột `ten` và `hoten` được đặt làm khóa chính (`[Key]`). Trong dự án thực tế cho phép trùng họ tên, bạn có thể bổ sung thêm cột `id INT IDENTITY(1,1) PRIMARY KEY`.
+Project đã cài sẵn gói NuGet `Microsoft.EntityFrameworkCore.SqlServer` phiên bản `10.0.15` (tương thích `net10.0-windows`). Nếu dựng project mới trong Visual Studio:
+- Vào **Project ➔ Manage NuGet Packages... ➔ Browse** ➔ tìm `Microsoft.EntityFrameworkCore.SqlServer` và cài phiên bản khớp với .NET của project.
 
----
+### Bước 3: Hiểu tầng dữ liệu (`Models/Nguoi.cs` và `Data/QuanLyDbContext.cs`)
 
-## 3. Bước 2 — Cài đặt thư viện Entity Framework Core cho SQL Server
+* **Model `Nguoi.cs`**: Mỗi thuộc tính trong class C# tương ứng với 1 cột trong bảng SQL Server:
+  - `[Table("NGUOI")]` chỉ định tên bảng.
+  - `[Key]` đánh dấu cột khóa chính (`ten`).
+  - `[Column("ten")]`, `[Column("tuoi")]`, `[Column("dchi")]` nối đúng tên cột trong SQL Server.
+  - `[DisplayName("...")]` đặt tên tiêu đề cột tiếng Việt hiển thị trên `DataGridView`.
+* **DbContext `QuanLyDbContext.cs`**: Chứa đúng 3 phần cốt lõi:
+  1. `ConnectionString`: địa chỉ trỏ tới SQL Server (`Server=.\SQLEXPRESS; Database=QUANLY; Integrated Security=True; TrustServerCertificate=True;`).
+  2. `DbSet<Nguoi> Nguois` và `DbSet<Diem> Diems`: đại diện cho 2 bảng dữ liệu để C# truy vấn.
+  3. `OnConfiguring(...)`: gọi `optionsBuilder.UseSqlServer(ConnectionString);` để cấu hình EF Core kết nối vào SQL Server.
 
-Project sử dụng gói **`Microsoft.EntityFrameworkCore.SqlServer`** (đã cấu hình sẵn trong `DBDemoWinFormApp.csproj` với phiên bản `10.0.15` tương thích `net10.0-windows`).
+### Bước 4: Luồng chạy trên `Form1` (`TRANG CHÍNH`)
 
-Nếu tự dựng lại từ đầu trong Visual Studio:
-1. Chuột phải vào project `DBDemoWinFormApp` ➔ **Manage NuGet Packages...**
-2. Chọn tab **Browse**, tìm `Microsoft.EntityFrameworkCore.SqlServer`.
-3. Chọn phiên bản khớp với phiên bản .NET của project (ví dụ `.NET 10` dùng bản `10.0.x`; `.NET 8` dùng bản `8.0.x`) rồi nhấn **Install**.
+Giao diện gồm đúng 3 nút như sơ đồ vở bài tập:
+1. **`Nối với CSDL` (`btnKetNoi_Click`)**:
+   - Tạo `using var db = new QuanLyDbContext();` (từ khóa `using` giúp tự đóng/giải phóng kết nối sau khi chạy xong).
+   - Gọi `db.Database.OpenConnection();` và `db.Database.CloseConnection();`.
+   - Thành công ➔ hiện `"Đã kết nối CSDL QUANLY"`. Thất bại ➔ bắt `Exception` và hiện nguyên nhân lỗi.
+2. **`Form 2` (`btnSangForm2_Click`)**:
+   - Tạo `Form2 form2 = new Form2();`
+   - Gắn `form2.FormClosed += (s, args) => this.Show();` để khi đóng `Form2` sẽ hiện lại chính `Form1` cũ.
+   - Gọi `form2.Show();` và `this.Hide();`.
+3. **`Thoát` (`btnThoat_Click`)**: gọi `Application.Exit();` để đóng hẳn chương trình.
 
-Hoặc cài qua dòng lệnh (.NET CLI):
+### Bước 5: Truy vấn có Parameter trên `Form2` (`KẾT QUẢ`)
 
-```powershell
-dotnet add DBDemoWinFormApp/DBDemoWinFormApp/DBDemoWinFormApp.csproj package Microsoft.EntityFrameworkCore.SqlServer --version 10.0.15
-```
-
-> Gói này tự động kéo theo `Microsoft.Data.SqlClient` (driver kết nối SQL Server của tài liệu PDF) cùng toàn bộ nhân EF Core (`DbContext`, `DbSet<T>`, LINQ-to-SQL).
-
----
-
-## 4. Bước 3 — Dựng Models và `QuanLyDbContext`
-
-### 4.1. Tạo các lớp Entity (`Models/Nguoi.cs` và `Models/Diem.cs`)
-
-Mỗi bảng trong SQL Server tương ứng với một class C#:
-- `[Table("NGUOI")]`, `[Column("ten")]`: ánh xạ đúng tên bảng và tên cột trong SQL Server.
-- `[Key]`: đánh dấu thuộc tính khóa chính để EF Core thực hiện `Find`, `Update`, `Remove`.
-- `[DisplayName("...")]`: giúp `DataGridView` trong WinForms tự hiển thị tiêu đề cột tiếng Việt thân thiện thay vì tên thuộc tính thô.
-
-### 4.2. Tạo lớp `QuanLyDbContext` (`Data/QuanLyDbContext.cs`)
-
-`QuanLyDbContext` kế thừa `DbContext` đóng vai trò cầu nối giữa WinForms và SQL Server:
+Khi vừa mở `Form2` (`Form2_Load`), hàm `TaiDuLieuNguoi("")` tải toàn bộ bảng `NGUOI` lên `DataGridView`.
+Khi nhập địa chỉ (ví dụ `HANOI`) vào ô `txtDiaChi` và bấm **`Tìm kiếm`**:
 
 ```csharp
-public class QuanLyDbContext : DbContext
-{
-    public const string DefaultConnectionString =
-        @"Server=.\SQLEXPRESS; Database=QUANLY; Integrated Security=True; TrustServerCertificate=True;";
-
-    public DbSet<Nguoi> Nguois => Set<Nguoi>();
-    public DbSet<Diem> Diems => Set<Diem>();
-
-    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-    {
-        if (!optionsBuilder.IsConfigured)
-        {
-            optionsBuilder.UseSqlServer(_connectionString);
-        }
-    }
-}
+danhSach = db.Nguois
+    .Where(nguoi => nguoi.Dchi == diaChi)
+    .ToList();
 ```
 
-**Ý nghĩa chuỗi kết nối (`ConnectionString`)**:
-- `Server=.\SQLEXPRESS`: tên SQL Server instance trên máy (nếu dùng bản mặc định thì đổi thành `Server=.` hoặc `Server=localhost`; nếu dùng LocalDB của Visual Studio thì đổi thành `Server=(localdb)\MSSQLLocalDB`).
-- `Database=QUANLY`: tên CSDL cần làm việc.
-- `Integrated Security=True`: đăng nhập bằng tài khoản Windows hiện tại (Windows Authentication).
-- `TrustServerCertificate=True`: bỏ qua lỗi kiểm tra chứng chỉ SSL tự ký trên SQL Server cài cục bộ.
+* EF Core dịch câu lệnh C# trên thành câu SQL có **Parameter** (minh họa mục `2.3` và `3.2 Có PARAMETER` trong vở):
+  ```sql
+  SELECT [n].[ten], [n].[dchi], [n].[tuoi]
+  FROM [NGUOI] AS [n]
+  WHERE [n].[dchi] = @__diaChi_0
+  ```
+* Việc dùng tham số `@__diaChi_0` thay vì nối chuỗi trực tiếp giúp tránh lỗi cú pháp khi nhập ký tự đặc biệt và phòng chống **SQL Injection**.
 
 ---
 
-## 5. Bước 4 — Kết nối từ `Form1` (Trang chính) và chuyển sang `Form2`
+## 4. Đọc thêm: Cách Thêm / Sửa / Xóa bằng `QuanLyDbContext`
 
-### 5.1. Kiểm tra kết nối bằng `DbContext` (`btnKetNoi_Click`)
-
-Thay vì gọi `SqlConnection` rời rạc trong từng Form, `Form1` tạo `QuanLyDbContext` và gọi `db.Database.OpenConnection()`:
+Khi đã nắm vững luồng kết nối và tìm kiếm ở trên, bạn có thể mở rộng thêm thao tác ghi dữ liệu vào SQL Server với 3 hàm `Add`, `Find`, `Remove` và `SaveChanges()`:
 
 ```csharp
-using var db = new QuanLyDbContext(connStr);
-db.Database.OpenConnection();
-db.Database.CloseConnection();
+using var db = new QuanLyDbContext();
+
+// 1. Thêm mới 1 người
+db.Nguois.Add(new Nguoi { Ten = "Nguyen Van B", Tuoi = 20, Dchi = "HANOI" });
+db.SaveChanges();
+
+// 2. Cập nhật theo khóa chính (ten)
+var nguoi = db.Nguois.Find("Nguyen Van B");
+if (nguoi != null) { nguoi.Tuoi = 21; db.SaveChanges(); }
+
+// 3. Xóa theo khóa chính (ten)
+var canXoa = db.Nguois.Find("Nguyen Van B");
+if (canXoa != null) { db.Nguois.Remove(canXoa); db.SaveChanges(); }
 ```
 
-- Nếu kết nối thành công: cập nhật `lblTrangThai` và hiện `MessageBox` `"Đã kết nối thành công CSDL QUANLY!"`.
-- Nếu thất bại (sai tên Server, chưa bật dịch vụ SQL Server hoặc chưa tạo DB `QUANLY`): khối `catch (Exception ex)` bắt lỗi và hiển thị nguyên nhân chi tiết (`ex.Message`).
-
-### 5.2. Chuyển qua lại giữa `Form1` và `Form2`
-
-- Ở `Form1`: `var form2 = new Form2(this, connStr); form2.Show(); this.Hide();`
-- Ở `Form2`: khi bấm `QUAY VỀ FORM1` (`Close()`) hoặc đóng cửa sổ `[X]`, sự kiện `OnFormClosed` tự gọi `_parentForm.Show()` để quay về **chính `Form1` ban đầu** (khắc phục tình trạng tạo nhiều `Form1` ẩn gây kẹt tiến trình khi đóng ứng dụng).
-- Nút `THOÁT` trên `Form1` gọi `Application.Exit()`.
-
 ---
 
-## 6. Bước 5 — Truy vấn có tham số (Parameter) và CRUD trên `Form2`
+## 5. Chạy thử & Khắc phục lỗi thường gặp
 
-Mỗi thao tác trên `Form2` đều mở một `QuanLyDbContext` mới bằng `using var db = CreateDbContext();` (mô hình *Unit-of-Work ngắn hạn*, giải phóng kết nối ngay sau khi xử lý xong).
-
-### 6.1. Tìm kiếm có Parameter (chống SQL Injection)
-
-Khi người dùng nhập từ khóa (ví dụ `HANOI`) vào ô tìm kiếm:
-- Chế độ **Tìm chính xác (`=`)**:
-  ```csharp
-  query = query.Where(n => n.Dchi == term || n.Ten == term);
-  ```
-- Chế độ **Tìm gần đúng (`Contains`)**:
-  ```csharp
-  query = query.Where(n => n.Dchi.Contains(term) || n.Ten.Contains(term));
-  ```
-
-EF Core sẽ tự động biên dịch biến `term` thành **SQL Parameter** (ví dụ `@__term_0`), đáp ứng yêu cầu *“Có PARAMETER”* trong bài giảng mà không lo lỗi cú pháp dấu nháy hay SQL Injection.
-
-### 6.2. Các thao tác CRUD
-
-| Thao tác | Luồng EF Core trong `Form2.cs` |
-|---|---|
-| **Đọc (Read)** | `db.Nguois.AsNoTracking().OrderBy(n => n.Ten).ToList()` ➔ gán vào `dgvKetQua.DataSource` |
-| **Thêm (Create)** | Kiểm tra trùng khóa ➔ `db.Nguois.Add(input)` ➔ `db.SaveChanges()` |
-| **Cập nhật (Update)** | `var existing = db.Nguois.Find(ten)` ➔ sửa `Tuoi`, `Dchi` ➔ `db.SaveChanges()` |
-| **Xóa (Delete)** | `var existing = db.Nguois.Find(ten)` ➔ `db.Nguois.Remove(existing)` ➔ `db.SaveChanges()` |
-
----
-
-## 7. Chạy thử & Khắc phục lỗi thường gặp
-
-### Chạy ứng dụng
-- **Trong Visual Studio**: Mở `DBDemoWinFormApp/DBDemoWinFormApp.slnx` và nhấn **F5**.
-- **Bằng .NET CLI**:
+* **Chạy bằng Visual Studio**: Mở `DBDemoWinFormApp/DBDemoWinFormApp.slnx` và nhấn **F5**.
+* **Chạy bằng CLI**:
   ```powershell
   dotnet run --project DBDemoWinFormApp/DBDemoWinFormApp/DBDemoWinFormApp.csproj
   ```
-
-### Các lỗi kết nối phổ biến
-1. **`A network-related or instance-specific error occurred...` (Error 26 / 40)**:
-   - Kiểm tra Windows Services (`services.msc`) xem **SQL Server (SQLEXPRESS)** đã ở trạng thái `Running` chưa.
-   - Nếu máy cài SQL Server bản mặc định (không phải Express), hãy sửa `Server=.\SQLEXPRESS` trên giao diện `Form1` (hoặc trong `QuanLyDbContext.DefaultConnectionString`) thành `Server=.` hoặc `Server=localhost`.
-2. **`Cannot open database "QUANLY" requested by the login`**:
-   - Bạn chưa tạo DB `QUANLY`. Hãy chạy file `database/init_quanly.sql` trong SSMS.
-3. **`Login failed for user...`**:
-   - Đảm bảo tài khoản Windows đang dùng có quyền truy cập vào SQL Server Express (hoặc cấu hình SQL Authentication `User Id=...;Password=...;` thay cho `Integrated Security=True`).
+* **Lỗi `A network-related or instance-specific error occurred...`**:
+  - Kiểm tra trong Windows Services (`services.msc`) xem dịch vụ **SQL Server (SQLEXPRESS)** đã `Running` chưa.
+  - Nếu máy bạn cài SQL Server bản mặc định (không phải Express), hãy đổi `Server=.\SQLEXPRESS` trong `Data/QuanLyDbContext.cs` thành `Server=.` hoặc `Server=localhost`.
+* **Lỗi `Cannot open database "QUANLY"`**: Bạn chưa chạy file `database/init_quanly.sql` trong SSMS.

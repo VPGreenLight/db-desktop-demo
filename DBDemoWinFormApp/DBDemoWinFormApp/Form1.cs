@@ -5,62 +5,74 @@ namespace DBDemoWinFormApp
 {
     public partial class Form1 : Form
     {
+        /// <summary>
+        /// Hàm khởi tạo (Constructor) của Form1.
+        /// Gọi InitializeComponent() để dựng các nút bấm và nhãn hiển thị từ Form1.Designer.cs.
+        /// </summary>
         public Form1()
         {
             InitializeComponent();
-            txtConnectionString.Text = QuanLyDbContext.DefaultConnectionString;
         }
 
-        private string GetActiveConnectionString()
-        {
-            string connStr = txtConnectionString.Text.Trim();
-            if (string.IsNullOrEmpty(connStr))
-            {
-                connStr = QuanLyDbContext.DefaultConnectionString;
-                txtConnectionString.Text = connStr;
-            }
-            return connStr;
-        }
-
+        /// <summary>
+        /// Sự kiện khi người dùng nhấn nút "Nối với CSDL".
+        /// Luồng xử lý kiểm tra kết nối tới SQL Server qua QuanLyDbContext:
+        ///   (1) Khởi tạo DbContext (kèm từ khóa using để tự giải phóng kết nối khi dùng xong).
+        ///   (2) Mở thử kết nối tới SQL Server và đóng lại ngay nếu thành công.
+        ///   (3) Thông báo kết quả thành công cho người dùng.
+        ///   (4) Nếu có lỗi (sai tên Server, chưa bật SQL Server, chưa tạo DB QUANLY...), bắt lỗi và hiển thị nguyên nhân.
+        /// </summary>
         private void btnKetNoi_Click(object? sender, EventArgs e)
         {
-            string connStr = GetActiveConnectionString();
-
             try
             {
-                using var db = new QuanLyDbContext(connStr);
+                // Bước 1: Tạo đối tượng QuanLyDbContext.
+                // Từ khóa "using" đảm bảo bộ nhớ và kết nối SQL Server tự động được giải phóng khi kết thúc khối try.
+                using var db = new QuanLyDbContext();
+
+                // Bước 2: Gọi OpenConnection() để kiểm tra kết nối thực tế tới CSDL QUANLY trên SQL Server.
+                // (EF Core sẽ chạy hàm OnConfiguring trong QuanLyDbContext để lấy ConnectionString).
                 db.Database.OpenConnection();
                 db.Database.CloseConnection();
 
-                lblTrangThai.Text = "Trạng thái: Đã kết nối thành công CSDL QUANLY";
-                lblTrangThai.ForeColor = Color.DarkGreen;
-
+                // Bước 3: Kết nối thông suốt -> báo thành công theo hướng dẫn.
                 MessageBox.Show(
-                    "Đã kết nối thành công CSDL QUANLY!",
+                    "Đã kết nối CSDL QUANLY",
                     "Thông báo",
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Information);
             }
             catch (Exception ex)
             {
-                lblTrangThai.Text = "Trạng thái: Kết nối thất bại";
-                lblTrangThai.ForeColor = Color.Firebrick;
-
+                // Bước 4: Kết nối thất bại -> hiển thị nguyên nhân lỗi cụ thể để người học dễ kiểm tra lại SQL Server.
                 MessageBox.Show(
-                    "Lỗi kết nối CSDL: " + ex.Message,
+                    "Lỗi kết nối CSDL:\n" + ex.Message,
                     "Thông báo",
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Error);
             }
         }
 
+        /// <summary>
+        /// Sự kiện khi người dùng nhấn nút "Form 2".
+        /// Luồng chuyển màn hình: tạo Form2, gắn sự kiện tự hiện lại Form1 khi Form2 đóng, rồi ẩn Form1 đi.
+        /// </summary>
         private void btnSangForm2_Click(object? sender, EventArgs e)
         {
-            var form2 = new Form2(this, GetActiveConnectionString());
+            Form2 form2 = new Form2();
+
+            // Khi người dùng bấm "Về Form 1" hoặc nút [X] trên Form2, sự kiện FormClosed sẽ chạy
+            // và gọi this.Show() để hiện lại đúng cửa sổ Form1 ban đầu (tránh tạo nhiều Form1 mới bị ẩn trong bộ nhớ).
+            form2.FormClosed += (s, args) => this.Show();
+
             form2.Show();
             this.Hide();
         }
 
+        /// <summary>
+        /// Sự kiện khi người dùng nhấn nút "Thoát".
+        /// Kết thúc toàn bộ ứng dụng WinForms.
+        /// </summary>
         private void btnThoat_Click(object? sender, EventArgs e)
         {
             Application.Exit();
