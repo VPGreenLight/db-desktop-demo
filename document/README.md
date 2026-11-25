@@ -1,145 +1,66 @@
-# Hướng dẫn kết nối WinForms với SQL Server (Tìm kiếm & Thêm / Sửa / Xóa)
+# Hướng dẫn WinForms & SQL Server (Từ Cơ bản đến Nâng cao)
 
-Tài liệu này được thiết kế gọn nhẹ theo [huongdan SQLSERVER udung.pdf](./huongdan%20SQLSERVER%20udung.pdf) và vở bài tập để giúp người mới dễ học và giảng giải cơ chế kết nối giữa **C# WinForms** và **SQL Server** qua **`DbContext` (Entity Framework Core)** cho cả 2 bảng `NGUOI` và `DIEM`.
-
----
-
-## 1. Sơ đồ điều hướng & Luồng tương tác với Database
-
-### Sơ đồ điều hướng giữa các Form
-
-```text
-                    ┌────────────────────────────────────────┐
-                    │       Form1 (TRANG CHÍNH)              │
-                    │  • Nối với CSDL (OpenConnection)       │
-                    │  • Form 2 - Bảng NGUOI                 │
-                    │  • Form 3 - Bảng DIEM                  │
-                    │  • Form 4 - Gộp NGUOI & DIEM           │
-                    │  • Thoát (Application.Exit)            │
-                    └───┬───────────────┬────────────────┬───┘
-                        │               │                │
-         Bấm "Form 2"   ▼               ▼  Bấm "Form 3"  ▼  Bấm "Form 4"
-   ┌─────────────────────────┐ ┌─────────────────────┐ ┌───────────────────────────┐
-   │ Form2 - Bảng NGUOI      │ │ Form3 - Bảng DIEM   │ │ Form4 - Gộp NGUOI & DIEM  │
-   │ • Tìm theo địa chỉ      │ │ • Tìm theo họ tên   │ │ • LEFT JOIN 2 bảng        │
-   │ • DataGridView          │ │ • DataGridView      │ │ • Hiển thị 5 cột gộp      │
-   │ • Thêm / Sửa / Xóa      │ │ • Thêm / Sửa / Xóa  │ │ • Thêm / Sửa / Xóa 2 bảng │
-   │ • Về Form 1             │ │ • Về Form 1         │ │ • Về Form 1               │
-   └─────────────────────────┘ └─────────────────────┘ └───────────────────────────┘
-```
-
-### Luồng đi của dữ liệu trong mỗi thao tác
-
-```text
-[WinForms UI] (Nhập ô TextBox / Nhấp dòng DataGridView / Bấm nút Thêm, Sửa, Xóa, Tìm)
-      │
-      ▼
-[Sự kiện Click] (btnTimKiem_Click, btnThem_Click, btnSua_Click, btnXoa_Click)
-      │  using var db = new QuanLyDbContext();
-      ▼
-[QuanLyDbContext] (DbSet<Nguoi>, DbSet<Diem> + ConnectionString)
-      │  EF Core dịch lệnh C# sang SQL có Parameter (@p0, @p1...)
-      ▼
-[SQL Server - CSDL QUANLY] (Bảng NGUOI, DIEM)
-      │
-      ▼
-[Cập nhật lại DataGridView] (TaiDuLieuNguoi / TaiDuLieuDiem)
-```
+Tài liệu này tổng hợp toàn bộ bài thực hành kết nối **C# WinForms** với **SQL Server (`QUANLY`)** qua **EF Core (`QuanLyDbContext`)** trên `Form1`, `Form2`, `Form3`, `Form4` và `FormBieuDo`.
 
 ---
 
-## 2. Cấu trúc thư mục & vai trò từng file
+## 1. Cấu trúc thư mục & thành phần dự án
 
 ```text
 db-desktop-demo/
 ├── database/
-│   └── init_quanly.sql                 # Script tạo DB QUANLY, 2 bảng NGUOI & DIEM và 200 bản ghi mẫu
+│   └── init_quanly.sql                 # Script tạo DB QUANLY, 2 bảng NGUOI & DIEM, 200 bản ghi,
+│                                       # VIEW vw_NguoiDiem, SP sp_ThongKeTheoDiaChi và 2 TRIGGER
 ├── document/
 │   ├── huongdan SQLSERVER udung.pdf    # Tài liệu hướng dẫn gốc
-│   └── README.md                       # Tài liệu bài giảng này
+│   └── README.md                       # Tài liệu tổng hợp này
 └── DBDemoWinFormApp/
-    ├── DBDemoWinFormApp.slnx           # File mở Solution trong Visual Studio
+    ├── DBDemoWinFormApp.slnx           # Solution Visual Studio
     └── DBDemoWinFormApp/
-        ├── Program.cs                  # Điểm chạy đầu tiên, mở Form1
-        ├── Models/
-        │   ├── Nguoi.cs                # Mô tả 1 dòng của bảng NGUOI(ten, tuoi, dchi)
-        │   ├── Diem.cs                 # Mô tả 1 dòng của bảng DIEM(hoten, toan, van)
-        │   └── NguoiDiemView.cs        # ViewModel chứa 5 cột gộp NGUOI + DIEM cho Form4
-        ├── Helpers/
-        │   └── InputValidator.cs       # Kiểm tra dữ liệu nhập dùng chung (Tuổi, Điểm)
+        ├── Program.cs                  # Điểm khởi chạy ứng dụng (mở Form1)
         ├── Data/
-        │   └── QuanLyDbContext.cs      # Cầu nối trung tâm tới SQL Server (ConnectionString + DbSet)
-        ├── Form1.cs / .Designer.cs     # Trang chính: Nối với CSDL, sang Form2/Form3/Form4, Thoát
-        ├── Form2.cs / .Designer.cs     # Tìm kiếm & Thêm / Sửa / Xóa bảng NGUOI
-        ├── Form3.cs / .Designer.cs     # Tìm kiếm & Thêm / Sửa / Xóa bảng DIEM
-        └── Form4.cs / .Designer.cs     # Gộp (LEFT JOIN) & Thêm / Sửa / Xóa cả NGUOI + DIEM
+        │   └── QuanLyDbContext.cs      # Kết nối SQL Server, ánh xạ bảng có Trigger & SQL View
+        ├── Models/
+        │   ├── Nguoi.cs                # Bảng NGUOI + cột dẫn xuất [NotMapped] NhomTuoi
+        │   ├── Diem.cs                 # Bảng DIEM + cột dẫn xuất [NotMapped] DiemTB, XepLoai
+        │   ├── NguoiDiemView.cs        # Ánh xạ SQL View vw_NguoiDiem + cột dẫn xuất
+        │   └── ThongKeDiaChiView.cs    # Kết quả trả về từ Stored Procedure sp_ThongKeTheoDiaChi
+        ├── Helpers/
+        │   ├── InputValidator.cs       # Kiểm tra tuổi (0-150) và điểm (0-10)
+        │   ├── LogoHelper.cs           # Chèn Logo mặc định, ẩn/hiện & đổi ảnh Logo từ máy
+        │   ├── CsvHelper.cs            # Xuất CSV (UTF-8 BOM cho Excel) & Nhập hàng loạt từ CSV
+        │   └── GridHelper.cs           # Ẩn/hiện cột, click tiêu đề sắp xếp, phân trang
+        ├── Form1.cs / .Designer.cs     # Trang chính: Test kết nối, mở Form2/Form3/Form4/FormBieuDo
+        ├── Form2.cs / .Designer.cs     # Quản lý bảng NGUOI (đủ 10 tính năng)
+        ├── Form3.cs / .Designer.cs     # Quản lý bảng DIEM (đủ 10 tính năng)
+        ├── Form4.cs / .Designer.cs     # Quản lý bảng gộp vw_NguoiDiem (đủ 10 tính năng)
+        └── FormBieuDo.cs / .Designer.cs# Dashboard vẽ biểu đồ GDI+ từ Stored Procedure & View
 ```
 
 ---
 
-## 3. Hướng dẫn từng bước
+## 2. Bản đồ 10 tính năng nâng cao áp dụng trên `Form2`, `Form3`, `Form4`
 
-### Bước 1: Tạo CSDL `QUANLY` và 200 bản ghi mẫu (`database/init_quanly.sql`)
-
-1. Mở **SQL Server Management Studio (SSMS)** và kết nối vào SQL Server trên máy (ví dụ `localhost` hoặc `.\SQLEXPRESS`).
-2. Mở file `database/init_quanly.sql` và nhấn **Execute (F5)**.
-3. Script sẽ tạo:
-   - Cơ sở dữ liệu `QUANLY`
-   - Bảng `NGUOI(ten, tuoi, dchi)` với `ten` là khóa chính (`PRIMARY KEY`)
-   - Bảng `DIEM(hoten, toan, van)` với `hoten` là khóa chính (`PRIMARY KEY`)
-   - 200 dòng dữ liệu mẫu cho mỗi bảng (bao gồm nhiều dòng `dchi = N'HANOI'` giống ví dụ trong vở ghi).
-
-### Bước 2: Thư viện kết nối (`Microsoft.EntityFrameworkCore.SqlServer`)
-
-Project đã cài sẵn gói NuGet `Microsoft.EntityFrameworkCore.SqlServer` phiên bản `10.0.15` (khớp với `net10.0-windows`). Nếu tạo project mới trong Visual Studio:
-- Vào **Project ➔ Manage NuGet Packages... ➔ Browse** ➔ tìm `Microsoft.EntityFrameworkCore.SqlServer` và cài phiên bản khớp với phiên bản .NET của project.
-
-### Bước 3: Hiểu tầng dữ liệu (`Models/` và `Data/QuanLyDbContext.cs`)
-
-* **Models (`Nguoi.cs`, `Diem.cs`)**: Mỗi thuộc tính C# ứng với 1 cột SQL Server:
-  - `[Table("NGUOI")]` / `[Table("DIEM")]`: nối class tới đúng tên bảng.
-  - `[Key]`: đánh dấu **khóa chính** (`ten` hoặc `hoten`). EF Core dựa vào khóa chính này để chạy `Find(...)` tìm đúng dòng cần **Sửa** hoặc **Xóa**.
-  - `[Column("...")]`: ánh xạ tên cột trong SQL Server.
-  - `[DisplayName("...")]`: tên tiêu đề cột hiển thị trên `DataGridView`.
-* **`QuanLyDbContext.cs`**: Cầu nối chứa chuỗi `ConnectionString`, hai bảng `DbSet<Nguoi> Nguois` / `DbSet<Diem> Diems`, và `OnConfiguring(...)` cấu hình `UseSqlServer(ConnectionString)`.
-
----
-
-## 4. Bảng đối chiếu 4 thao tác C# EF Core ↔ SQL Server (CRUD)
-
-Trên `Form2` (bảng `NGUOI`) và `Form3` (bảng `DIEM`), cả 4 chức năng **Đọc / Tìm kiếm, Thêm, Sửa, Xóa** đều tuân theo cùng một quy tắc dễ nhớ:
-
-| Thao tác | Code C# trong `Form2.cs` / `Form3.cs` | Câu lệnh SQL có Parameter do EF Core sinh ra |
+| # | Tính năng | Cách triển khai trong project |
 |---|---|---|
-| **Đọc / Tìm kiếm** (`SELECT`) | `db.Nguois.ToList()` hoặc<br>`db.Nguois.Where(n => n.Dchi == diaChi).ToList()` | `SELECT [ten], [tuoi], [dchi] FROM [NGUOI]`<br>`WHERE [dchi] = @__diaChi_0` |
-| **Thêm mới** (`INSERT`) | `db.Nguois.Add(nguoiMoi);`<br>`db.SaveChanges();` | `INSERT INTO [NGUOI] ([ten], [dchi], [tuoi])`<br>`VALUES (@p0, @p1, @p2)` |
-| **Cập nhật** (`UPDATE`) | `var x = db.Nguois.Find(ten);`<br>`x.Tuoi = tuoi; x.Dchi = dchi;`<br>`db.SaveChanges();` | `UPDATE [NGUOI] SET [dchi] = @p0, [tuoi] = @p1`<br>`WHERE [ten] = @p2` |
-| **Xóa** (`DELETE`) | `var x = db.Nguois.Find(ten);`<br>`db.Nguois.Remove(x);`<br>`db.SaveChanges();` | `DELETE FROM [NGUOI] WHERE [ten] = @p0` |
-
-### 2 điểm quan trọng cần nhấn mạnh khi giảng giải
-
-1. **Vai trò của `db.SaveChanges()`**:
-   - Các lệnh `Add(...)`, sửa thuộc tính sau `Find(...)`, hoặc `Remove(...)` **mới chỉ đánh dấu thay đổi trong bộ nhớ C#**.
-   - Chỉ khi gọi `db.SaveChanges()`, EF Core mới thật sự mở giao dịch và gửi câu lệnh `INSERT` / `UPDATE` / `DELETE` xuống SQL Server.
-2. **Vai trò của khóa chính `[Key]` (`ten` và `hoten`)**:
-   - Khi nhấp vào 1 dòng trên `DataGridView`, sự kiện `CellClick` điền sẵn dữ liệu xuống 3 ô nhập.
-   - Khi bấm **Sửa** hoặc **Xóa**, hàm `db.Nguois.Find(ten)` / `db.Diems.Find(hoten)` dùng **khóa chính** này để tìm chính xác dòng trong SQL Server. Vì vậy không được đổi tên khóa chính khi bấm **Sửa** (muốn đổi tên thì **Xóa** dòng cũ hoặc **Thêm** dòng mới).
-
-### Gộp 2 bảng & Giao dịch đồng bộ trên `Form4`
-
-* **Hiển thị gộp 2 bảng (`LEFT JOIN`)**: `Form4` ghép `db.Nguois` và `db.Diems` theo điều kiện `n.Ten equals d.Hoten` vào lớp `NguoiDiemView` (gồm 5 cột: `Họ tên`, `Tuổi`, `Địa chỉ`, `Điểm Toán`, `Điểm Văn`). Nhờ dùng `LEFT JOIN`, nếu một người đã có ở `NGUOI` nhưng chưa có điểm ở `DIEM` thì vẫn hiện trên bảng với ô điểm để trống.
-* **Thêm / Sửa / Xóa đồng thời 2 bảng trong 1 Transaction**: Khi bấm **Thêm**, **Sửa**, hoặc **Xóa** trên `Form4`, code tác động lên cả `db.Nguois` và `db.Diems` rồi mới gọi **1 lần `db.SaveChanges()`**. EF Core tự động bọc các câu lệnh của cả 2 bảng vào cùng 1 transaction — đảm bảo dữ liệu luôn đồng bộ (cả 2 cùng thành công hoặc cùng hủy nếu có lỗi).
+| 1 | **Chèn Logo & Ẩn/Hiện Logo** | `PictureBox picLogo` + `CheckBox chkHienLogo` qua [LogoHelper.cs](../DBDemoWinFormApp/DBDemoWinFormApp/Helpers/LogoHelper.cs). Nhấp trực tiếp vào Logo để chọn ảnh `.png`/`.jpg` từ máy. |
+| 2 | **Ẩn / Hiện từng cột DataGridView** | Hàng CheckBox phía trên bảng gắn qua `GridHelper.GanCheckBoxAnHienCot(...)` giúp bật/tắt `Columns[name].Visible`. |
+| 3 | **Sắp xếp Tăng / Giảm** | Hỗ trợ cả 2 cách: chọn cột trong `ComboBox` + nút `Tăng dần ▲ / Giảm dần ▼`, hoặc nhấp trực tiếp vào dòng tiêu đề cột (`ColumnHeaderMouseClick`). |
+| 4 | **Bộ lọc đa điều kiện** | Kết hợp lọc Tên + `ComboBox` Địa chỉ (`DISTINCT`) + Khoảng Tuổi (`Từ..Đến`) + Khoảng Điểm TB + Xếp loại (`XayDungTruyVanLoc`). |
+| 5 | **Cột tính toán dẫn xuất & Thống kê tổng hợp** | Thuộc tính `[NotMapped]` (`NhomTuoi`, `DiemTB`, `XepLoai`) tự tính theo từng dòng; dòng `lblThongKe` hiển thị `COUNT`, `AVG`, `MAX`, `MIN` trên toàn tập lọc. |
+| 6 | **Xử lý Phân trang** | Chọn số dòng/trang (`20`, `50`, `200`) và chuyển trang `<` / `>` bằng `.Skip((trang - 1) * size).Take(size)` tại SQL Server. |
+| 7 | **Stored Procedure, View & Trigger** | • `Form4` đọc trực tiếp từ SQL View `dbo.vw_NguoiDiem`.<br>• `FormBieuDo` gọi `EXEC dbo.sp_ThongKeTheoDiaChi`.<br>• Bảng `NGUOI` và `DIEM` gắn Trigger `trg_KiemTraTuoiHopLe`, `trg_KiemTraDiemHopLe` (kèm `HasTrigger` trong `QuanLyDbContext`). |
+| 8 | **Giao dịch hàng loạt & Rollback** | Nút `Batch +1 tuổi` (`Form2`) và `Batch +0.5đ Toán` (`Form3`, `Form4`) dùng `BeginTransaction()`. Nếu có bản ghi vượt ngưỡng `> 10` điểm hoặc `> 150` tuổi, Trigger SQL Server chặn lại và tự `Rollback()` toàn bộ. |
+| 9 | **Import / Export CSV (Excel)** | Nút `Xuất CSV` xuất các cột đang hiển thị kèm UTF-8 BOM mở trực tiếp bằng Excel; `Nhập CSV` nạp hàng loạt trong 1 Transaction (tự `Rollback` nếu có dòng lỗi). |
+| 10 | **Biểu đồ trực quan (Dashboard)** | Nút `Biểu đồ (SP)` mở [FormBieuDo.cs](../DBDemoWinFormApp/DBDemoWinFormApp/FormBieuDo.cs), vẽ biểu đồ cột Số người & Điểm TB theo Tỉnh/Thành và tỷ lệ Xếp loại bằng GDI+. |
 
 ---
 
-## 5. Chạy thử & Khắc phục lỗi thường gặp
+## 3. Cách chạy thử & Demo trên lớp
 
-* **Chạy bằng Visual Studio**: Mở `DBDemoWinFormApp/DBDemoWinFormApp.slnx` và nhấn **F5**.
-* **Chạy bằng CLI**:
-  ```powershell
-  dotnet run --project DBDemoWinFormApp/DBDemoWinFormApp/DBDemoWinFormApp.csproj
-  ```
-* **Lỗi `A network-related or instance-specific error occurred...`**:
-  - Kiểm tra dịch vụ **SQL Server** trong `services.msc` đã chạy (`Running`) chưa.
-  - Kiểm tra `ConnectionString` trong `Data/QuanLyDbContext.cs` đã đúng tên server máy bạn chưa (`Server=localhost` cho bản mặc định hoặc `Server=.\SQLEXPRESS` cho bản Express).
-* **Lỗi `Cannot open database "QUANLY"`**: Chạy lại file `database/init_quanly.sql` trong SSMS.
+1. Đảm bảo đã chạy script [init_quanly.sql](../database/init_quanly.sql) trên SQL Server để khởi tạo 200 bản ghi, `vw_NguoiDiem`, `sp_ThongKeTheoDiaChi` và 2 Trigger.
+2. Mở [DBDemoWinFormApp.slnx](../DBDemoWinFormApp/DBDemoWinFormApp.slnx) trong Visual Studio và nhấn **F5**.
+3. **Gợi ý kịch bản test Rollback + Trigger ngay**:
+   - Vào **Form 3** (hoặc **Form 4**), bấm thẳng **Batch +0.5đ Toán** khi chưa lọc (trong 200 người có những bạn đã đạt `9.75` hoặc `10.0`).
+   - SQL Server Trigger `trg_KiemTraDiemHopLe` sẽ báo lỗi vượt `10` điểm và ứng dụng sẽ **Rollback toàn bộ**, không làm sai dữ liệu của những bạn khác.
+   - Sau đó lọc `ĐTB từ 0 đến 7` rồi bấm **Batch +0.5đ Toán** ➔ Giao dịch **Commit** thành công!

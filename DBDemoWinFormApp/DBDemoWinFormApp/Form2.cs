@@ -1,75 +1,165 @@
 using DBDemoWinFormApp.Data;
 using DBDemoWinFormApp.Helpers;
 using DBDemoWinFormApp.Models;
+using Microsoft.EntityFrameworkCore;
 
 namespace DBDemoWinFormApp
 {
     public partial class Form2 : Form
     {
-        /// <summary>
-        /// Hàm khởi tạo (Constructor) của Form2.
-        /// Dựng giao diện quản lý bảng NGUOI gồm Tìm kiếm, bảng DataGridView và cụm Thêm / Sửa / Xóa.
-        /// </summary>
+        private static readonly string[] CotSapXep = ["Ten", "Tuoi", "Dchi"];
+        private bool _isInitializing = true;
+        private bool _sapXepTangDan = true;
+        private int _trangHienTai = 1;
+        private int _tongTrang = 1;
+
         public Form2()
         {
             InitializeComponent();
         }
 
-        /// <summary>
-        /// Sự kiện tự động chạy ngay khi Form2 vừa được mở lên.
-        /// Truyền chuỗi rỗng "" để hiển thị toàn bộ danh sách bảng NGUOI ngay lúc mới vào màn hình.
-        /// </summary>
         private void Form2_Load(object? sender, EventArgs e)
         {
-            TaiDuLieuNguoi("");
+            _isInitializing = true;
+
+            LogoHelper.KhoiTaoLogo(picLogo, chkHienLogo);
+            GridHelper.GanCheckBoxAnHienCot(
+                dgvKetQua,
+                (chkCotTen, "Ten"),
+                (chkCotTuoi, "Tuoi"),
+                (chkCotDiaChi, "Dchi"),
+                (chkCotNhomTuoi, "NhomTuoi"));
+
+            cboSapXep.Items.AddRange(["Họ tên", "Tuổi", "Địa chỉ"]);
+            cboSapXep.SelectedIndex = 0;
+
+            cboKichThuocTrang.Items.AddRange(["20", "50", "200"]);
+            cboKichThuocTrang.SelectedIndex = 0;
+
+            NapDanhSachDiaChi();
+            _isInitializing = false;
+
+            TaiDuLieuNguoi();
         }
 
         /// <summary>
-        /// Sự kiện khi người dùng nhấn nút "Tìm kiếm".
-        /// Lấy giá trị địa chỉ từ ô nhập (txtDiaChi) và gọi hàm truy vấn CSDL qua DbContext.
+        /// Nạp danh sách các Địa chỉ duy nhất (DISTINCT) từ SQL Server vào ComboBox lọc.
         /// </summary>
-        private void btnTimKiem_Click(object? sender, EventArgs e)
-        {
-            string diaChi = txtDiaChi.Text.Trim();
-            TaiDuLieuNguoi(diaChi);
-        }
-
-        /// <summary>
-        /// Hàm đọc và lọc dữ liệu bảng NGUOI từ SQL Server thông qua QuanLyDbContext:
-        ///   Bước 1: Mở phiên làm việc mới với CSDL bằng "using var db = new QuanLyDbContext();".
-        ///   Bước 2: Truy vấn bảng NGUOI (lấy tất cả hoặc lọc theo địa chỉ có Parameter).
-        ///   Bước 3: Gán danh sách kết quả vào dgvKetQua.DataSource để hiển thị lên bảng.
-        /// </summary>
-        private void TaiDuLieuNguoi(string diaChi)
+        private void NapDanhSachDiaChi()
         {
             try
             {
-                // Bước 1: Tạo DbContext cho lần truy vấn này (từ khóa "using" tự giải phóng kết nối sau khi dùng).
+                string luaChonCu = cboDiaChi.SelectedItem?.ToString() ?? "-- Tất cả --";
                 using var db = new QuanLyDbContext();
 
-                List<Nguoi> danhSach;
+                List<string> dsDiaChi = db.Nguois
+                    .AsNoTracking()
+                    .Select(n => n.Dchi)
+                    .Distinct()
+                    .OrderBy(d => d)
+                    .ToList();
 
-                // Bước 2: Kiểm tra người dùng có nhập địa chỉ cần tìm hay không.
-                if (string.IsNullOrWhiteSpace(diaChi))
+                cboDiaChi.Items.Clear();
+                cboDiaChi.Items.Add("-- Tất cả --");
+                foreach (string dchi in dsDiaChi)
                 {
-                    // Trường hợp để trống: lấy toàn bộ các dòng trong bảng NGUOI.
-                    // EF Core dịch thành SQL: SELECT [ten], [tuoi], [dchi] FROM [NGUOI]
-                    danhSach = db.Nguois.ToList();
+                    cboDiaChi.Items.Add(dchi);
+                }
+
+                cboDiaChi.SelectedItem = cboDiaChi.Items.Contains(luaChonCu) ? luaChonCu : "-- Tất cả --";
+            }
+            catch
+            {
+                if (cboDiaChi.Items.Count == 0)
+                {
+                    cboDiaChi.Items.Add("-- Tất cả --");
+                    cboDiaChi.SelectedIndex = 0;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Tạo câu truy vấn LINQ đa điều kiện (Tên, Địa chỉ, Tuổi từ..đến) đẩy xuống SQL Server với Parameter.
+        /// </summary>
+        private IQueryable<Nguoi> XayDungTruyVanLoc(QuanLyDbContext db)
+        {
+            IQueryable<Nguoi> query = db.Nguois.AsNoTracking();
+
+            string tenLoc = txtTimTen.Text.Trim();
+            if (!string.IsNullOrEmpty(tenLoc))
+            {
+                query = query.Where(n => n.Ten.Contains(tenLoc));
+            }
+
+            string? diaChiLoc = cboDiaChi.SelectedItem?.ToString();
+            if (!string.IsNullOrEmpty(diaChiLoc) && diaChiLoc != "-- Tất cả --")
+            {
+                query = query.Where(n => n.Dchi == diaChiLoc);
+            }
+
+            if (int.TryParse(txtTuoiTu.Text.Trim(), out int tuoiTu))
+            {
+                query = query.Where(n => n.Tuoi >= tuoiTu);
+            }
+
+            if (int.TryParse(txtTuoiDen.Text.Trim(), out int tuoiDen))
+            {
+                query = query.Where(n => n.Tuoi <= tuoiDen);
+            }
+
+            return query;
+        }
+
+        /// <summary>
+        /// Tải dữ liệu bảng NGUOI với Bộ lọc đa điều kiện, Thống kê tổng hợp (COUNT/AVG/MAX/MIN),
+        /// Sắp xếp Tăng/Giảm (ORDER BY) và Phân trang ở tầng SQL Server (Skip/Take).
+        /// </summary>
+        private void TaiDuLieuNguoi()
+        {
+            try
+            {
+                using var db = new QuanLyDbContext();
+                IQueryable<Nguoi> query = XayDungTruyVanLoc(db);
+
+                // 1. Thống kê tổng hợp trên toàn bộ tập dữ liệu khớp điều kiện lọc
+                int tongBanGhi = query.Count();
+                if (tongBanGhi > 0)
+                {
+                    double tuoiTB = query.Average(n => (double)n.Tuoi);
+                    int tuoiMax = query.Max(n => n.Tuoi);
+                    int tuoiMin = query.Min(n => n.Tuoi);
+                    lblThongKe.Text = $"Tổng: {tongBanGhi} bản ghi | Tuổi TB: {tuoiTB:0.0} | Cao nhất: {tuoiMax} | Thấp nhất: {tuoiMin}";
                 }
                 else
                 {
-                    // Trường hợp có nhập địa chỉ (ví dụ: "HANOI"):
-                    // Minh họa mục 2.3 & 3.2 trong vở ghi (truy vấn có PARAMETER).
-                    // EF Core tự động biến "diaChi" thành tham số SQL (@__diaChi_0):
-                    //   SELECT [ten], [tuoi], [dchi] FROM [NGUOI] WHERE [dchi] = @__diaChi_0
-                    // Cách dùng tham số giúp an toàn trước lỗi SQL Injection.
-                    danhSach = db.Nguois
-                        .Where(nguoi => nguoi.Dchi == diaChi)
-                        .ToList();
+                    lblThongKe.Text = "Tổng: 0 bản ghi phù hợp";
                 }
 
-                // Bước 3: Đổ danh sách kết quả vào DataGridView.
-                dgvKetQua.DataSource = danhSach;
+                // 2. Sắp xếp Tăng dần / Giảm dần
+                int sortIdx = Math.Max(0, cboSapXep.SelectedIndex);
+                query = sortIdx switch
+                {
+                    1 => _sapXepTangDan ? query.OrderBy(n => n.Tuoi).ThenBy(n => n.Ten) : query.OrderByDescending(n => n.Tuoi).ThenBy(n => n.Ten),
+                    2 => _sapXepTangDan ? query.OrderBy(n => n.Dchi).ThenBy(n => n.Ten) : query.OrderByDescending(n => n.Dchi).ThenBy(n => n.Ten),
+                    _ => _sapXepTangDan ? query.OrderBy(n => n.Ten) : query.OrderByDescending(n => n.Ten)
+                };
+
+                // 3. Phân trang (Server-side Pagination: OFFSET ... FETCH NEXT ...)
+                int kichThuocTrang = int.TryParse(cboKichThuocTrang.SelectedItem?.ToString(), out int size) ? size : 20;
+                GridHelper.CapNhatPhanTrang(tongBanGhi, ref _trangHienTai, kichThuocTrang, out _tongTrang, lblTrang, btnTrangTruoc, btnTrangSau);
+
+                List<Nguoi> danhSachTrang = query
+                    .Skip((_trangHienTai - 1) * kichThuocTrang)
+                    .Take(kichThuocTrang)
+                    .ToList();
+
+                dgvKetQua.DataSource = danhSachTrang;
+                GridHelper.ApDungAnHienCot(
+                    dgvKetQua,
+                    (chkCotTen, "Ten"),
+                    (chkCotTuoi, "Tuoi"),
+                    (chkCotDiaChi, "Dchi"),
+                    (chkCotNhomTuoi, "NhomTuoi"));
             }
             catch (Exception ex)
             {
@@ -81,19 +171,77 @@ namespace DBDemoWinFormApp
             }
         }
 
-        /// <summary>
-        /// Sự kiện khi người dùng nhấp chuột vào một dòng trên bảng DataGridView.
-        /// Đọc đối tượng Nguoi gắn với dòng đó và điền sẵn vào 3 ô nhập bên dưới để tiện Sửa hoặc Xóa.
-        /// </summary>
+        private void btnTimKiem_Click(object? sender, EventArgs e)
+        {
+            _trangHienTai = 1;
+            TaiDuLieuNguoi();
+        }
+
+        private void btnBoLoc_Click(object? sender, EventArgs e)
+        {
+            _isInitializing = true;
+            txtTimTen.Clear();
+            txtTuoiTu.Clear();
+            txtTuoiDen.Clear();
+            if (cboDiaChi.Items.Count > 0)
+            {
+                cboDiaChi.SelectedIndex = 0;
+            }
+            _isInitializing = false;
+            _trangHienTai = 1;
+            TaiDuLieuNguoi();
+        }
+
+        private void cboSapXep_SelectedIndexChanged(object? sender, EventArgs e)
+        {
+            if (_isInitializing) return;
+            _trangHienTai = 1;
+            TaiDuLieuNguoi();
+        }
+
+        private void btnSapXep_Click(object? sender, EventArgs e)
+        {
+            _sapXepTangDan = !_sapXepTangDan;
+            GridHelper.CapNhatNutSapXep(btnSapXep, _sapXepTangDan);
+            _trangHienTai = 1;
+            TaiDuLieuNguoi();
+        }
+
+        private void dgvKetQua_ColumnHeaderMouseClick(object? sender, DataGridViewCellMouseEventArgs e)
+        {
+            _trangHienTai = 1;
+            GridHelper.XuLyClickTieuDeCot(dgvKetQua, e.ColumnIndex, cboSapXep, CotSapXep, ref _sapXepTangDan, btnSapXep, TaiDuLieuNguoi);
+        }
+
+        private void cboKichThuocTrang_SelectedIndexChanged(object? sender, EventArgs e)
+        {
+            if (_isInitializing) return;
+            _trangHienTai = 1;
+            TaiDuLieuNguoi();
+        }
+
+        private void btnTrangTruoc_Click(object? sender, EventArgs e)
+        {
+            if (_trangHienTai > 1)
+            {
+                _trangHienTai--;
+                TaiDuLieuNguoi();
+            }
+        }
+
+        private void btnTrangSau_Click(object? sender, EventArgs e)
+        {
+            if (_trangHienTai < _tongTrang)
+            {
+                _trangHienTai++;
+                TaiDuLieuNguoi();
+            }
+        }
+
         private void dgvKetQua_CellClick(object? sender, DataGridViewCellEventArgs e)
         {
-            // Bỏ qua nếu người dùng nhấp vào dòng tiêu đề cột (RowIndex = -1).
-            if (e.RowIndex < 0)
-            {
-                return;
-            }
+            if (e.RowIndex < 0) return;
 
-            // DataBoundItem chính là đối tượng Nguoi tương ứng với dòng đang được chọn trên bảng.
             if (dgvKetQua.Rows[e.RowIndex].DataBoundItem is Nguoi nguoiDangChon)
             {
                 txtTen.Text = nguoiDangChon.Ten;
@@ -102,17 +250,8 @@ namespace DBDemoWinFormApp
             }
         }
 
-        /// <summary>
-        /// Sự kiện khi người dùng nhấn nút "Thêm".
-        /// Luồng thêm mới 1 bản ghi vào bảng NGUOI:
-        ///   (1) Kiểm tra dữ liệu hợp lệ trên 3 ô nhập.
-        ///   (2) Mở QuanLyDbContext và kiểm tra trùng khóa chính (ten).
-        ///   (3) Gọi db.Nguois.Add(...) rồi db.SaveChanges() để ghi lệnh INSERT xuống SQL Server.
-        ///   (4) Xóa trắng ô nhập, tải lại bảng DataGridView và thông báo thành công.
-        /// </summary>
         private void btnThem_Click(object? sender, EventArgs e)
         {
-            // Bước 1: Đọc và kiểm tra dữ liệu từ 3 TextBox.
             string ten = txtTen.Text.Trim();
             string dchi = txtDiaChiNhap.Text.Trim();
 
@@ -139,54 +278,30 @@ namespace DBDemoWinFormApp
 
             try
             {
-                // Bước 2: Mở DbContext và kiểm tra xem khóa chính "ten" đã tồn tại trong bảng NGUOI chưa.
                 using var db = new QuanLyDbContext();
 
                 if (db.Nguois.Find(ten) != null)
                 {
-                    MessageBox.Show(
-                        $"Đã tồn tại người tên '{ten}' trong bảng NGUOI (trùng khóa chính).",
-                        "Trùng dữ liệu",
-                        MessageBoxButtons.OK,
-                        MessageBoxIcon.Warning);
+                    MessageBox.Show($"Đã tồn tại người tên '{ten}' trong bảng NGUOI (trùng khóa chính).", "Trùng dữ liệu", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                     return;
                 }
 
-                // Bước 3: Tạo đối tượng Nguoi mới, đánh dấu Add và gọi SaveChanges().
-                // SaveChanges() sẽ gửi câu lệnh SQL có tham số xuống SQL Server:
-                //   INSERT INTO [NGUOI] ([ten], [dchi], [tuoi]) VALUES (@p0, @p1, @p2)
-                var nguoiMoi = new Nguoi
-                {
-                    Ten = ten,
-                    Tuoi = tuoi,
-                    Dchi = dchi
-                };
-
-                db.Nguois.Add(nguoiMoi);
+                db.Nguois.Add(new Nguoi { Ten = ten, Tuoi = tuoi, Dchi = dchi });
                 db.SaveChanges();
 
-                // Bước 4: Làm mới ô nhập, tải lại bảng để thấy ngay dòng vừa thêm và báo thành công.
                 XoaOThongTin();
-                TaiDuLieuNguoi(txtDiaChi.Text.Trim());
+                NapDanhSachDiaChi();
+                TaiDuLieuNguoi();
                 MessageBox.Show("Thêm dữ liệu thành công!", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Lỗi khi thêm dữ liệu:\n" + ex.Message, "Lỗi CSDL", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show("Lỗi khi thêm dữ liệu:\n" + (ex.InnerException?.Message ?? ex.Message), "Lỗi CSDL", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
-        /// <summary>
-        /// Sự kiện khi người dùng nhấn nút "Sửa".
-        /// Luồng cập nhật bản ghi trong bảng NGUOI:
-        ///   (1) Kiểm tra dữ liệu hợp lệ trên 3 ô nhập.
-        ///   (2) Dùng db.Nguois.Find(ten) tìm bản ghi cần sửa theo khóa chính.
-        ///   (3) Cập nhật thuộc tính Tuoi, Dchi và gọi db.SaveChanges() để sinh lệnh UPDATE.
-        ///   (4) Tải lại bảng DataGridView và thông báo thành công.
-        /// </summary>
         private void btnSua_Click(object? sender, EventArgs e)
         {
-            // Bước 1: Đọc và kiểm tra dữ liệu nhập.
             string ten = txtTen.Text.Trim();
             string dchi = txtDiaChiNhap.Text.Trim();
 
@@ -215,46 +330,29 @@ namespace DBDemoWinFormApp
             {
                 using var db = new QuanLyDbContext();
 
-                // Bước 2: Tìm đúng bản ghi trong CSDL dựa theo khóa chính (ten).
                 Nguoi? nguoiCanSua = db.Nguois.Find(ten);
                 if (nguoiCanSua == null)
                 {
-                    MessageBox.Show(
-                        $"Không tìm thấy người tên '{ten}' để sửa.\nLưu ý: Họ tên là khóa chính dùng để xác định dòng cần sửa.",
-                        "Không tìm thấy",
-                        MessageBoxButtons.OK,
-                        MessageBoxIcon.Warning);
+                    MessageBox.Show($"Không tìm thấy người tên '{ten}' để sửa.", "Không tìm thấy", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                     return;
                 }
 
-                // Bước 3: Thay đổi giá trị trên đối tượng đang được DbContext theo dõi rồi gọi SaveChanges().
-                // EF Core tự động phát hiện thay đổi và sinh câu SQL:
-                //   UPDATE [NGUOI] SET [dchi] = @p0, [tuoi] = @p1 WHERE [ten] = @p2
                 nguoiCanSua.Tuoi = tuoi;
                 nguoiCanSua.Dchi = dchi;
                 db.SaveChanges();
 
-                // Bước 4: Tải lại danh sách để hiển thị dữ liệu mới từ SQL Server.
-                TaiDuLieuNguoi(txtDiaChi.Text.Trim());
+                NapDanhSachDiaChi();
+                TaiDuLieuNguoi();
                 MessageBox.Show("Cập nhật dữ liệu thành công!", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Lỗi khi sửa dữ liệu:\n" + ex.Message, "Lỗi CSDL", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show("Lỗi khi sửa dữ liệu:\n" + (ex.InnerException?.Message ?? ex.Message), "Lỗi CSDL", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
-        /// <summary>
-        /// Sự kiện khi người dùng nhấn nút "Xóa".
-        /// Luồng xóa bản ghi trong bảng NGUOI:
-        ///   (1) Kiểm tra họ tên cần xóa và hỏi lại người dùng để tránh xóa nhầm.
-        ///   (2) Tìm bản ghi theo khóa chính bằng db.Nguois.Find(ten).
-        ///   (3) Gọi db.Nguois.Remove(...) rồi db.SaveChanges() để sinh lệnh DELETE.
-        ///   (4) Xóa trắng ô nhập, tải lại bảng DataGridView và thông báo thành công.
-        /// </summary>
         private void btnXoa_Click(object? sender, EventArgs e)
         {
-            // Bước 1: Kiểm tra tên cần xóa và yêu cầu xác nhận.
             string ten = txtTen.Text.Trim();
             if (string.IsNullOrEmpty(ten))
             {
@@ -263,13 +361,7 @@ namespace DBDemoWinFormApp
                 return;
             }
 
-            DialogResult xacNhan = MessageBox.Show(
-                $"Bạn có chắc chắn muốn xóa '{ten}' khỏi bảng NGUOI?",
-                "Xác nhận xóa",
-                MessageBoxButtons.YesNo,
-                MessageBoxIcon.Question);
-
-            if (xacNhan != DialogResult.Yes)
+            if (MessageBox.Show($"Bạn có chắc chắn muốn xóa '{ten}' khỏi bảng NGUOI?", "Xác nhận xóa", MessageBoxButtons.YesNo, MessageBoxIcon.Question) != DialogResult.Yes)
             {
                 return;
             }
@@ -278,7 +370,6 @@ namespace DBDemoWinFormApp
             {
                 using var db = new QuanLyDbContext();
 
-                // Bước 2: Tìm bản ghi cần xóa trong bảng NGUOI theo khóa chính (ten).
                 Nguoi? nguoiCanXoa = db.Nguois.Find(ten);
                 if (nguoiCanXoa == null)
                 {
@@ -286,25 +377,150 @@ namespace DBDemoWinFormApp
                     return;
                 }
 
-                // Bước 3: Đánh dấu Remove và gọi SaveChanges().
-                // EF Core sẽ gửi lệnh: DELETE FROM [NGUOI] WHERE [ten] = @p0
                 db.Nguois.Remove(nguoiCanXoa);
                 db.SaveChanges();
 
-                // Bước 4: Xóa trắng ô nhập và tải lại bảng.
                 XoaOThongTin();
-                TaiDuLieuNguoi(txtDiaChi.Text.Trim());
+                NapDanhSachDiaChi();
+                TaiDuLieuNguoi();
                 MessageBox.Show("Đã xóa dữ liệu thành công!", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Lỗi khi xóa dữ liệu:\n" + ex.Message, "Lỗi CSDL", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show("Lỗi khi xóa dữ liệu:\n" + (ex.InnerException?.Message ?? ex.Message), "Lỗi CSDL", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
         /// <summary>
-        /// Hàm phụ trợ xóa trống 3 ô nhập sau khi Thêm hoặc Xóa.
+        /// Giao dịch hàng loạt & Rollback: Tăng +1 tuổi cho toàn bộ các dòng đang lọc trong 1 Transaction.
+        /// Nếu bất kỳ dòng nào vượt quá 150 tuổi, Trigger trg_KiemTraTuoiHopLe trên SQL Server sẽ chặn và Rollback toàn bộ.
         /// </summary>
+        private void btnBatch_Click(object? sender, EventArgs e)
+        {
+            try
+            {
+                using var db = new QuanLyDbContext();
+                List<string> danhSachTen = XayDungTruyVanLoc(db).Select(n => n.Ten).ToList();
+
+                if (danhSachTen.Count == 0)
+                {
+                    MessageBox.Show("Không có bản ghi nào trong danh sách lọc để cập nhật hàng loạt.", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    return;
+                }
+
+                DialogResult confirm = MessageBox.Show(
+                    $"Tăng +1 tuổi cho {danhSachTen.Count} người đang lọc?\n(Thao tác chạy trong 1 Transaction: lỗi ở bất kỳ dòng nào sẽ Rollback toàn bộ).",
+                    "Xác nhận Giao dịch hàng loạt",
+                    MessageBoxButtons.YesNo,
+                    MessageBoxIcon.Question);
+
+                if (confirm != DialogResult.Yes) return;
+
+                using var transaction = db.Database.BeginTransaction();
+                try
+                {
+                    List<Nguoi> entities = db.Nguois.Where(n => danhSachTen.Contains(n.Ten)).ToList();
+                    foreach (Nguoi n in entities)
+                    {
+                        n.Tuoi += 1;
+                    }
+
+                    db.SaveChanges();
+                    transaction.Commit();
+
+                    TaiDuLieuNguoi();
+                    MessageBox.Show($"Đã Commit thành công: tăng +1 tuổi cho {entities.Count} bản ghi!", "Transaction Commit", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+                catch (Exception ex)
+                {
+                    transaction.Rollback();
+                    MessageBox.Show(
+                        "Giao dịch hàng loạt đã bị HỦY (Rollback) toàn bộ!\nNguyên nhân: " + (ex.InnerException?.Message ?? ex.Message),
+                        "Transaction Rollback",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Error);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Lỗi khởi tạo giao dịch:\n" + ex.Message, "Lỗi CSDL", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        /// <summary>
+        /// Nhập hàng loạt từ file CSV (định dạng cột: ten, tuoi, dchi) trong 1 Transaction có Rollback khi gặp dòng lỗi.
+        /// </summary>
+        private void btnNhapCsv_Click(object? sender, EventArgs e)
+        {
+            if (!CsvHelper.DocFileCsv(out List<string[]> cacDong))
+            {
+                return;
+            }
+
+            using var db = new QuanLyDbContext();
+            using var transaction = db.Database.BeginTransaction();
+            try
+            {
+                int soDongThem = 0;
+                for (int i = 0; i < cacDong.Count; i++)
+                {
+                    string[] cols = cacDong[i];
+                    if (cols.Length < 3)
+                    {
+                        throw new InvalidOperationException($"Dòng dữ liệu số {i + 1} thiếu cột (cần ít nhất 3 cột: Họ tên, Tuổi, Địa chỉ).");
+                    }
+
+                    string ten = cols[0].Trim();
+                    string dchi = cols[2].Trim();
+
+                    if (string.IsNullOrEmpty(ten) || string.IsNullOrEmpty(dchi))
+                    {
+                        throw new InvalidOperationException($"Dòng dữ liệu số {i + 1} có Họ tên hoặc Địa chỉ trống.");
+                    }
+
+                    if (!int.TryParse(cols[1].Trim(), out int tuoi))
+                    {
+                        throw new InvalidOperationException($"Dòng dữ liệu số {i + 1} ('{ten}') có Tuổi '{cols[1]}' không phải số nguyên.");
+                    }
+
+                    if (db.Nguois.Find(ten) != null)
+                    {
+                        throw new InvalidOperationException($"Dòng dữ liệu số {i + 1}: Họ tên '{ten}' đã tồn tại (trùng khóa chính).");
+                    }
+
+                    db.Nguois.Add(new Nguoi { Ten = ten, Tuoi = tuoi, Dchi = dchi });
+                    soDongThem++;
+                }
+
+                db.SaveChanges();
+                transaction.Commit();
+
+                NapDanhSachDiaChi();
+                TaiDuLieuNguoi();
+                MessageBox.Show($"Đã Import thành công {soDongThem} bản ghi vào bảng NGUOI!", "Nhập CSV thành công", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+            catch (Exception ex)
+            {
+                transaction.Rollback();
+                MessageBox.Show(
+                    "Import CSV thất bại — đã Rollback toàn bộ file để bảo toàn CSDL:\n" + (ex.InnerException?.Message ?? ex.Message),
+                    "Import Rollback",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
+            }
+        }
+
+        private void btnXuatCsv_Click(object? sender, EventArgs e)
+        {
+            CsvHelper.XuatRaCsv(dgvKetQua, "DanhSach_NGUOI.csv");
+        }
+
+        private void btnBieuDo_Click(object? sender, EventArgs e)
+        {
+            using var formBieuDo = new FormBieuDo();
+            formBieuDo.ShowDialog(this);
+        }
+
         private void XoaOThongTin()
         {
             txtTen.Clear();
@@ -312,10 +528,6 @@ namespace DBDemoWinFormApp
             txtDiaChiNhap.Clear();
         }
 
-        /// <summary>
-        /// Sự kiện khi người dùng nhấn nút "Về Form 1".
-        /// Đóng Form2 lại; sự kiện FormClosed đã gắn bên Form1 sẽ tự động hiện lại Form1.
-        /// </summary>
         private void btnVeForm1_Click(object? sender, EventArgs e)
         {
             this.Close();

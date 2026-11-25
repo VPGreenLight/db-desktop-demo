@@ -100,6 +100,16 @@ namespace DBDemoWinFormApp
         }
 
         /// <summary>
+        /// Sự kiện khi người dùng nhấn nút "Biểu đồ & Thống kê (SP / View)".
+        /// Mở Dashboard trực quan gọi Stored Procedure sp_ThongKeTheoDiaChi và SQL View vw_NguoiDiem.
+        /// </summary>
+        private void btnBieuDo_Click(object? sender, EventArgs e)
+        {
+            using var formBieuDo = new FormBieuDo();
+            formBieuDo.ShowDialog(this);
+        }
+
+        /// <summary>
         /// Sự kiện khi người dùng nhấn nút "Thoát".
         /// Kết thúc toàn bộ ứng dụng WinForms.
         /// </summary>

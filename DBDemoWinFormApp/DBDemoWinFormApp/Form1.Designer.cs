@@ -33,6 +33,7 @@ namespace DBDemoWinFormApp
             btnSangForm2 = new Button();
             btnSangForm3 = new Button();
             btnSangForm4 = new Button();
+            btnBieuDo = new Button();
             btnThoat = new Button();
             SuspendLayout();
             // 
@@ -51,7 +52,7 @@ namespace DBDemoWinFormApp
             btnKetNoi.Font = new Font("Segoe UI", 10.5F, FontStyle.Bold);
             btnKetNoi.Location = new Point(60, 75);
             btnKetNoi.Name = "btnKetNoi";
-            btnKetNoi.Size = new Size(240, 44);
+            btnKetNoi.Size = new Size(270, 44);
             btnKetNoi.TabIndex = 1;
             btnKetNoi.Text = "Nối với CSDL";
             btnKetNoi.UseVisualStyleBackColor = true;
@@ -62,7 +63,7 @@ namespace DBDemoWinFormApp
             btnSangForm2.Font = new Font("Segoe UI", 10.5F, FontStyle.Bold);
             btnSangForm2.Location = new Point(60, 130);
             btnSangForm2.Name = "btnSangForm2";
-            btnSangForm2.Size = new Size(240, 44);
+            btnSangForm2.Size = new Size(270, 44);
             btnSangForm2.TabIndex = 2;
             btnSangForm2.Text = "Form 2 - Bảng NGUOI";
             btnSangForm2.UseVisualStyleBackColor = true;
@@ -73,7 +74,7 @@ namespace DBDemoWinFormApp
             btnSangForm3.Font = new Font("Segoe UI", 10.5F, FontStyle.Bold);
             btnSangForm3.Location = new Point(60, 185);
             btnSangForm3.Name = "btnSangForm3";
-            btnSangForm3.Size = new Size(240, 44);
+            btnSangForm3.Size = new Size(270, 44);
             btnSangForm3.TabIndex = 3;
             btnSangForm3.Text = "Form 3 - Bảng DIEM";
             btnSangForm3.UseVisualStyleBackColor = true;
@@ -84,19 +85,30 @@ namespace DBDemoWinFormApp
             btnSangForm4.Font = new Font("Segoe UI", 10.5F, FontStyle.Bold);
             btnSangForm4.Location = new Point(60, 240);
             btnSangForm4.Name = "btnSangForm4";
-            btnSangForm4.Size = new Size(240, 44);
+            btnSangForm4.Size = new Size(270, 44);
             btnSangForm4.TabIndex = 4;
             btnSangForm4.Text = "Form 4 - Gộp NGUOI & DIEM";
             btnSangForm4.UseVisualStyleBackColor = true;
             btnSangForm4.Click += btnSangForm4_Click;
             // 
+            // btnBieuDo
+            // 
+            btnBieuDo.Font = new Font("Segoe UI", 10.5F, FontStyle.Bold);
+            btnBieuDo.Location = new Point(60, 295);
+            btnBieuDo.Name = "btnBieuDo";
+            btnBieuDo.Size = new Size(270, 44);
+            btnBieuDo.TabIndex = 5;
+            btnBieuDo.Text = "Biểu đồ & Thống kê (SP / View)";
+            btnBieuDo.UseVisualStyleBackColor = true;
+            btnBieuDo.Click += btnBieuDo_Click;
+            // 
             // btnThoat
             // 
             btnThoat.Font = new Font("Segoe UI", 10F);
-            btnThoat.Location = new Point(330, 310);
+            btnThoat.Location = new Point(330, 360);
             btnThoat.Name = "btnThoat";
             btnThoat.Size = new Size(100, 38);
-            btnThoat.TabIndex = 5;
+            btnThoat.TabIndex = 6;
             btnThoat.Text = "Thoát";
             btnThoat.UseVisualStyleBackColor = true;
             btnThoat.Click += btnThoat_Click;
@@ -105,8 +117,9 @@ namespace DBDemoWinFormApp
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(460, 375);
+            ClientSize = new Size(460, 420);
             Controls.Add(btnThoat);
+            Controls.Add(btnBieuDo);
             Controls.Add(btnSangForm4);
             Controls.Add(btnSangForm3);
             Controls.Add(btnSangForm2);
@@ -127,6 +140,7 @@ namespace DBDemoWinFormApp
         private Button btnSangForm2;
         private Button btnSangForm3;
         private Button btnSangForm4;
+        private Button btnBieuDo;
         private Button btnThoat;
     }
 }

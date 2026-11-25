@@ -2,98 +2,267 @@ using System.Globalization;
 using DBDemoWinFormApp.Data;
 using DBDemoWinFormApp.Helpers;
 using DBDemoWinFormApp.Models;
+using Microsoft.EntityFrameworkCore;
 
 namespace DBDemoWinFormApp
 {
     public partial class Form4 : Form
     {
-        /// <summary>
-        /// Hàm khởi tạo (Constructor) của Form4.
-        /// Dựng giao diện giống Form2 nhưng hiển thị bảng gộp cả NGUOI + DIEM (5 cột)
-        /// và cho phép Thêm / Sửa / Xóa đồng thời trên cả 2 bảng.
-        /// </summary>
+        private static readonly string[] CotSapXep = ["Ten", "Tuoi", "Dchi", "Toan", "Van", "DiemTB"];
+        private bool _isInitializing = true;
+        private bool _sapXepTangDan = true;
+        private int _trangHienTai = 1;
+        private int _tongTrang = 1;
+
         public Form4()
         {
             InitializeComponent();
         }
 
-        /// <summary>
-        /// Sự kiện tự động chạy khi Form4 vừa mở lên: tải toàn bộ bảng gộp NGUOI + DIEM.
-        /// </summary>
         private void Form4_Load(object? sender, EventArgs e)
         {
-            TaiDuLieuGop("");
+            _isInitializing = true;
+
+            LogoHelper.KhoiTaoLogo(picLogo, chkHienLogo);
+            GridHelper.GanCheckBoxAnHienCot(
+                dgvKetQua,
+                (chkCotTen, "Ten"),
+                (chkCotTuoi, "Tuoi"),
+                (chkCotDiaChi, "Dchi"),
+                (chkCotToan, "Toan"),
+                (chkCotVan, "Van"),
+                (chkCotDiemTB, "DiemTB"),
+                (chkCotXepLoai, "XepLoai"));
+
+            cboSapXep.Items.AddRange(["Họ tên", "Tuổi", "Địa chỉ", "Điểm Toán", "Điểm Văn", "Điểm TB"]);
+            cboSapXep.SelectedIndex = 0;
+
+            cboKichThuocTrang.Items.AddRange(["20", "50", "200"]);
+            cboKichThuocTrang.SelectedIndex = 0;
+
+            NapDanhSachDiaChi();
+            _isInitializing = false;
+
+            TaiDuLieuGop();
         }
 
-        /// <summary>
-        /// Sự kiện khi nhấn nút "Tìm kiếm": lọc theo địa chỉ hoặc họ tên.
-        /// </summary>
-        private void btnTimKiem_Click(object? sender, EventArgs e)
-        {
-            string tuKhoa = txtTimKiem.Text.Trim();
-            TaiDuLieuGop(tuKhoa);
-        }
-
-        /// <summary>
-        /// Hàm ghép (LEFT JOIN) bảng NGUOI và bảng DIEM qua QuanLyDbContext:
-        ///   Bước 1: Mở DbContext kết nối SQL Server.
-        ///   Bước 2: Viết câu LINQ ghép bảng NGUOI với bảng DIEM theo điều kiện NGUOI.ten = DIEM.hoten.
-        ///           EF Core sẽ dịch sang SQL:
-        ///             SELECT n.ten, n.tuoi, n.dchi, d.toan, d.van
-        ///             FROM NGUOI AS n LEFT JOIN DIEM AS d ON n.ten = d.hoten
-        ///   Bước 3: Nếu có từ khóa, thêm điều kiện lọc (Parameter hóa tự động để chống SQL Injection).
-        ///   Bước 4: Đổ kết quả NguoiDiemView vào DataGridView.
-        /// </summary>
-        private void TaiDuLieuGop(string tuKhoa)
+        private void NapDanhSachDiaChi()
         {
             try
             {
-                // Bước 1: Tạo DbContext (tự giải phóng kết nối khi thoát khối using).
+                string luaChonCu = cboDiaChi.SelectedItem?.ToString() ?? "-- Tất cả --";
                 using var db = new QuanLyDbContext();
 
-                // Bước 2: Ghép (LEFT JOIN) NGUOI và DIEM để kể cả người chưa có điểm vẫn hiện lên bảng.
-                IQueryable<NguoiDiemView> query =
-                    from n in db.Nguois
-                    join d in db.Diems on n.Ten equals d.Hoten into nhomDiem
-                    from d in nhomDiem.DefaultIfEmpty()
-                    select new NguoiDiemView
-                    {
-                        Ten = n.Ten,
-                        Tuoi = n.Tuoi,
-                        Dchi = n.Dchi,
-                        Toan = d == null ? null : (double?)d.Toan,
-                        Van = d == null ? null : (double?)d.Van
-                    };
+                List<string> dsDiaChi = db.Nguois
+                    .AsNoTracking()
+                    .Select(n => n.Dchi)
+                    .Distinct()
+                    .OrderBy(d => d)
+                    .ToList();
 
-                // Bước 3: Lọc theo địa chỉ hoặc họ tên bằng Parameter (@__tuKhoa_0) nếu người dùng nhập từ khóa.
-                if (!string.IsNullOrWhiteSpace(tuKhoa))
+                cboDiaChi.Items.Clear();
+                cboDiaChi.Items.Add("-- Tất cả --");
+                foreach (string dchi in dsDiaChi)
                 {
-                    query = query.Where(x => x.Dchi.Contains(tuKhoa) || x.Ten.Contains(tuKhoa));
+                    cboDiaChi.Items.Add(dchi);
                 }
 
-                // Bước 4: Thực thi truy vấn sang SQL Server và gán danh sách cho DataGridView.
-                dgvKetQua.DataSource = query.OrderBy(x => x.Ten).ToList();
+                cboDiaChi.SelectedItem = cboDiaChi.Items.Contains(luaChonCu) ? luaChonCu : "-- Tất cả --";
             }
-            catch (Exception ex)
+            catch
             {
-                MessageBox.Show(
-                    "Không thể tải bảng gộp NGUOI & DIEM từ SQL Server:\n" + ex.Message,
-                    "Lỗi CSDL",
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Error);
+                if (cboDiaChi.Items.Count == 0)
+                {
+                    cboDiaChi.Items.Add("-- Tất cả --");
+                    cboDiaChi.SelectedIndex = 0;
+                }
             }
         }
 
         /// <summary>
-        /// Sự kiện khi người dùng nhấp vào 1 dòng trên DataGridView.
-        /// Nạp toàn bộ 5 thông tin (Họ tên, Tuổi, Địa chỉ, Điểm Toán, Điểm Văn) xuống các ô nhập để Sửa / Xóa.
+        /// Tạo câu truy vấn đa điều kiện trực tiếp trên SQL VIEW dbo.vw_NguoiDiem (db.NguoiDiemViews).
         /// </summary>
+        private IQueryable<NguoiDiemView> XayDungTruyVanLoc(QuanLyDbContext db)
+        {
+            IQueryable<NguoiDiemView> query = db.NguoiDiemViews.AsNoTracking();
+
+            string tenLoc = txtTimKiem.Text.Trim();
+            if (!string.IsNullOrEmpty(tenLoc))
+            {
+                query = query.Where(x => x.Ten.Contains(tenLoc) || x.Dchi.Contains(tenLoc));
+            }
+
+            string? diaChiLoc = cboDiaChi.SelectedItem?.ToString();
+            if (!string.IsNullOrEmpty(diaChiLoc) && diaChiLoc != "-- Tất cả --")
+            {
+                query = query.Where(x => x.Dchi == diaChiLoc);
+            }
+
+            if (int.TryParse(txtTuoiTu.Text.Trim(), out int tuoiTu))
+            {
+                query = query.Where(x => x.Tuoi >= tuoiTu);
+            }
+
+            if (int.TryParse(txtTuoiDen.Text.Trim(), out int tuoiDen))
+            {
+                query = query.Where(x => x.Tuoi <= tuoiDen);
+            }
+
+            if (InputValidator.DocDiemHopLe(txtDiemTu.Text, out double diemTu))
+            {
+                query = query.Where(x => x.Toan != null && x.Van != null && (x.Toan + x.Van) / 2.0 >= diemTu);
+            }
+
+            if (InputValidator.DocDiemHopLe(txtDiemDen.Text, out double diemDen))
+            {
+                query = query.Where(x => x.Toan != null && x.Van != null && (x.Toan + x.Van) / 2.0 <= diemDen);
+            }
+
+            return query;
+        }
+
+        /// <summary>
+        /// Tải dữ liệu gộp từ SQL VIEW dbo.vw_NguoiDiem kèm Thống kê tổng hợp, Sắp xếp Tăng/Giảm và Phân trang.
+        /// </summary>
+        private void TaiDuLieuGop()
+        {
+            try
+            {
+                using var db = new QuanLyDbContext();
+                IQueryable<NguoiDiemView> query = XayDungTruyVanLoc(db);
+
+                // 1. Thống kê tổng hợp
+                int tongBanGhi = query.Count();
+                if (tongBanGhi > 0)
+                {
+                    double tuoiTB = query.Average(x => (double)x.Tuoi);
+                    IQueryable<NguoiDiemView> coDiem = query.Where(x => x.Toan != null && x.Van != null);
+                    if (coDiem.Any())
+                    {
+                        double dtb = coDiem.Average(x => (x.Toan!.Value + x.Van!.Value) / 2.0);
+                        double dtbMax = coDiem.Max(x => (x.Toan!.Value + x.Van!.Value) / 2.0);
+                        double dtbMin = coDiem.Min(x => (x.Toan!.Value + x.Van!.Value) / 2.0);
+                        lblThongKe.Text = $"Tổng: {tongBanGhi} | Tuổi TB: {tuoiTB:0.0} | ĐTB: {dtb:0.00} (Max {dtbMax:0.00} / Min {dtbMin:0.00})";
+                    }
+                    else
+                    {
+                        lblThongKe.Text = $"Tổng: {tongBanGhi} bản ghi | Tuổi TB: {tuoiTB:0.0}";
+                    }
+                }
+                else
+                {
+                    lblThongKe.Text = "Tổng: 0 bản ghi phù hợp";
+                }
+
+                // 2. Sắp xếp Tăng dần / Giảm dần
+                int sortIdx = Math.Max(0, cboSapXep.SelectedIndex);
+                query = sortIdx switch
+                {
+                    1 => _sapXepTangDan ? query.OrderBy(x => x.Tuoi).ThenBy(x => x.Ten) : query.OrderByDescending(x => x.Tuoi).ThenBy(x => x.Ten),
+                    2 => _sapXepTangDan ? query.OrderBy(x => x.Dchi).ThenBy(x => x.Ten) : query.OrderByDescending(x => x.Dchi).ThenBy(x => x.Ten),
+                    3 => _sapXepTangDan ? query.OrderBy(x => x.Toan).ThenBy(x => x.Ten) : query.OrderByDescending(x => x.Toan).ThenBy(x => x.Ten),
+                    4 => _sapXepTangDan ? query.OrderBy(x => x.Van).ThenBy(x => x.Ten) : query.OrderByDescending(x => x.Van).ThenBy(x => x.Ten),
+                    5 => _sapXepTangDan ? query.OrderBy(x => (x.Toan + x.Van) / 2.0).ThenBy(x => x.Ten) : query.OrderByDescending(x => (x.Toan + x.Van) / 2.0).ThenBy(x => x.Ten),
+                    _ => _sapXepTangDan ? query.OrderBy(x => x.Ten) : query.OrderByDescending(x => x.Ten)
+                };
+
+                // 3. Phân trang
+                int kichThuocTrang = int.TryParse(cboKichThuocTrang.SelectedItem?.ToString(), out int size) ? size : 20;
+                GridHelper.CapNhatPhanTrang(tongBanGhi, ref _trangHienTai, kichThuocTrang, out _tongTrang, lblTrang, btnTrangTruoc, btnTrangSau);
+
+                dgvKetQua.DataSource = query
+                    .Skip((_trangHienTai - 1) * kichThuocTrang)
+                    .Take(kichThuocTrang)
+                    .ToList();
+
+                GridHelper.ApDungAnHienCot(
+                    dgvKetQua,
+                    (chkCotTen, "Ten"),
+                    (chkCotTuoi, "Tuoi"),
+                    (chkCotDiaChi, "Dchi"),
+                    (chkCotToan, "Toan"),
+                    (chkCotVan, "Van"),
+                    (chkCotDiemTB, "DiemTB"),
+                    (chkCotXepLoai, "XepLoai"));
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Không thể tải bảng gộp vw_NguoiDiem từ SQL Server:\n" + ex.Message, "Lỗi CSDL", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private void btnTimKiem_Click(object? sender, EventArgs e)
+        {
+            _trangHienTai = 1;
+            TaiDuLieuGop();
+        }
+
+        private void btnBoLoc_Click(object? sender, EventArgs e)
+        {
+            _isInitializing = true;
+            txtTimKiem.Clear();
+            txtTuoiTu.Clear();
+            txtTuoiDen.Clear();
+            txtDiemTu.Clear();
+            txtDiemDen.Clear();
+            if (cboDiaChi.Items.Count > 0)
+            {
+                cboDiaChi.SelectedIndex = 0;
+            }
+            _isInitializing = false;
+            _trangHienTai = 1;
+            TaiDuLieuGop();
+        }
+
+        private void cboSapXep_SelectedIndexChanged(object? sender, EventArgs e)
+        {
+            if (_isInitializing) return;
+            _trangHienTai = 1;
+            TaiDuLieuGop();
+        }
+
+        private void btnSapXep_Click(object? sender, EventArgs e)
+        {
+            _sapXepTangDan = !_sapXepTangDan;
+            GridHelper.CapNhatNutSapXep(btnSapXep, _sapXepTangDan);
+            _trangHienTai = 1;
+            TaiDuLieuGop();
+        }
+
+        private void dgvKetQua_ColumnHeaderMouseClick(object? sender, DataGridViewCellMouseEventArgs e)
+        {
+            _trangHienTai = 1;
+            GridHelper.XuLyClickTieuDeCot(dgvKetQua, e.ColumnIndex, cboSapXep, CotSapXep, ref _sapXepTangDan, btnSapXep, TaiDuLieuGop);
+        }
+
+        private void cboKichThuocTrang_SelectedIndexChanged(object? sender, EventArgs e)
+        {
+            if (_isInitializing) return;
+            _trangHienTai = 1;
+            TaiDuLieuGop();
+        }
+
+        private void btnTrangTruoc_Click(object? sender, EventArgs e)
+        {
+            if (_trangHienTai > 1)
+            {
+                _trangHienTai--;
+                TaiDuLieuGop();
+            }
+        }
+
+        private void btnTrangSau_Click(object? sender, EventArgs e)
+        {
+            if (_trangHienTai < _tongTrang)
+            {
+                _trangHienTai++;
+                TaiDuLieuGop();
+            }
+        }
+
         private void dgvKetQua_CellClick(object? sender, DataGridViewCellEventArgs e)
         {
-            if (e.RowIndex < 0)
-            {
-                return;
-            }
+            if (e.RowIndex < 0) return;
 
             if (dgvKetQua.Rows[e.RowIndex].DataBoundItem is NguoiDiemView dongDangChon)
             {
@@ -105,18 +274,8 @@ namespace DBDemoWinFormApp
             }
         }
 
-        /// <summary>
-        /// Sự kiện khi nhấn nút "Thêm".
-        /// Thêm mới đồng thời 1 dòng vào bảng NGUOI và 1 dòng vào bảng DIEM trong CÙNG 1 transaction:
-        ///   (1) Kiểm tra 5 ô nhập hợp lệ.
-        ///   (2) Kiểm tra khóa chính "ten" chưa tồn tại ở cả NGUOI lẫn DIEM.
-        ///   (3) Gọi db.Nguois.Add(...) và db.Diems.Add(...), rồi gọi 1 lần db.SaveChanges().
-        ///       EF Core tự gộp cả 2 lệnh INSERT vào 1 giao dịch (transaction) xuống SQL Server.
-        ///   (4) Xóa trắng ô nhập và tải lại bảng gộp.
-        /// </summary>
         private void btnThem_Click(object? sender, EventArgs e)
         {
-            // Bước 1: Kiểm tra dữ liệu nhập của cả 5 ô.
             if (!TryDocDuLieuNhap(out string ten, out int tuoi, out string dchi, out double toan, out double van))
             {
                 return;
@@ -124,46 +283,31 @@ namespace DBDemoWinFormApp
 
             try
             {
-                // Bước 2: Kiểm tra trùng khóa chính trên cả 2 bảng.
                 using var db = new QuanLyDbContext();
 
                 if (db.Nguois.Find(ten) != null || db.Diems.Find(ten) != null)
                 {
-                    MessageBox.Show(
-                        $"Đã tồn tại '{ten}' trong bảng NGUOI hoặc DIEM (trùng khóa chính).",
-                        "Trùng dữ liệu",
-                        MessageBoxButtons.OK,
-                        MessageBoxIcon.Warning);
+                    MessageBox.Show($"Đã tồn tại '{ten}' trong bảng NGUOI hoặc DIEM (trùng khóa chính).", "Trùng dữ liệu", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                     return;
                 }
 
-                // Bước 3: Thêm đối tượng mới vào cả 2 DbSet và lưu cùng lúc bằng 1 lần SaveChanges().
                 db.Nguois.Add(new Nguoi { Ten = ten, Tuoi = tuoi, Dchi = dchi });
                 db.Diems.Add(new Diem { Hoten = ten, Toan = toan, Van = van });
                 db.SaveChanges();
 
-                // Bước 4: Làm mới giao diện và tải lại bảng gộp.
                 XoaOThongTin();
-                TaiDuLieuGop(txtTimKiem.Text.Trim());
+                NapDanhSachDiaChi();
+                TaiDuLieuGop();
                 MessageBox.Show("Đã thêm mới dữ liệu vào cả NGUOI và DIEM!", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Lỗi khi thêm dữ liệu:\n" + ex.Message, "Lỗi CSDL", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show("Lỗi khi thêm dữ liệu:\n" + (ex.InnerException?.Message ?? ex.Message), "Lỗi CSDL", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
-        /// <summary>
-        /// Sự kiện khi nhấn nút "Sửa".
-        /// Cập nhật thông tin đồng thời trên cả 2 bảng NGUOI và DIEM theo khóa chính họ tên:
-        ///   (1) Kiểm tra 5 ô nhập hợp lệ.
-        ///   (2) Tìm bản ghi bên NGUOI bằng db.Nguois.Find(ten).
-        ///   (3) Tìm bản ghi bên DIEM bằng db.Diems.Find(ten) (nếu người này chưa có điểm thì tự tạo mới ở DIEM).
-        ///   (4) Gọi db.SaveChanges() để cập nhật cả 2 bảng trong cùng 1 transaction.
-        /// </summary>
         private void btnSua_Click(object? sender, EventArgs e)
         {
-            // Bước 1: Kiểm tra dữ liệu nhập.
             if (!TryDocDuLieuNhap(out string ten, out int tuoi, out string dchi, out double toan, out double van))
             {
                 return;
@@ -173,23 +317,16 @@ namespace DBDemoWinFormApp
             {
                 using var db = new QuanLyDbContext();
 
-                // Bước 2: Tìm dòng cần sửa trong bảng NGUOI theo khóa chính (ten).
                 Nguoi? nguoiCanSua = db.Nguois.Find(ten);
                 if (nguoiCanSua == null)
                 {
-                    MessageBox.Show(
-                        $"Không tìm thấy '{ten}' trong bảng NGUOI để sửa.\nLưu ý: Họ tên là khóa chính dùng để định danh dòng cần sửa.",
-                        "Không tìm thấy",
-                        MessageBoxButtons.OK,
-                        MessageBoxIcon.Warning);
+                    MessageBox.Show($"Không tìm thấy '{ten}' trong bảng NGUOI để sửa.", "Không tìm thấy", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                     return;
                 }
 
-                // Cập nhật thông tin bảng NGUOI.
                 nguoiCanSua.Tuoi = tuoi;
                 nguoiCanSua.Dchi = dchi;
 
-                // Bước 3: Tìm dòng điểm tương ứng bên bảng DIEM; nếu chưa có thì thêm mới vào DIEM.
                 Diem? diemCanSua = db.Diems.Find(ten);
                 if (diemCanSua != null)
                 {
@@ -201,25 +338,20 @@ namespace DBDemoWinFormApp
                     db.Diems.Add(new Diem { Hoten = ten, Toan = toan, Van = van });
                 }
 
-                // Bước 4: Ghi thay đổi của cả 2 bảng xuống SQL Server trong 1 lần SaveChanges().
                 db.SaveChanges();
 
-                TaiDuLieuGop(txtTimKiem.Text.Trim());
+                NapDanhSachDiaChi();
+                TaiDuLieuGop();
                 MessageBox.Show("Đã cập nhật dữ liệu cho cả NGUOI và DIEM!", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Lỗi khi cập nhật dữ liệu:\n" + ex.Message, "Lỗi CSDL", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show("Lỗi khi cập nhật dữ liệu:\n" + (ex.InnerException?.Message ?? ex.Message), "Lỗi CSDL", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
-        /// <summary>
-        /// Sự kiện khi nhấn nút "Xóa".
-        /// Xóa bản ghi có họ tên tương ứng ở cả bảng DIEM và bảng NGUOI trong cùng 1 transaction.
-        /// </summary>
         private void btnXoa_Click(object? sender, EventArgs e)
         {
-            // Bước 1: Kiểm tra họ tên cần xóa và hỏi xác nhận.
             string ten = txtTen.Text.Trim();
             if (string.IsNullOrEmpty(ten))
             {
@@ -228,13 +360,7 @@ namespace DBDemoWinFormApp
                 return;
             }
 
-            DialogResult xacNhan = MessageBox.Show(
-                $"Bạn có chắc chắn muốn xóa '{ten}' khỏi cả 2 bảng NGUOI và DIEM?",
-                "Xác nhận xóa",
-                MessageBoxButtons.YesNo,
-                MessageBoxIcon.Question);
-
-            if (xacNhan != DialogResult.Yes)
+            if (MessageBox.Show($"Bạn có chắc chắn muốn xóa '{ten}' khỏi cả 2 bảng NGUOI và DIEM?", "Xác nhận xóa", MessageBoxButtons.YesNo, MessageBoxIcon.Question) != DialogResult.Yes)
             {
                 return;
             }
@@ -243,7 +369,6 @@ namespace DBDemoWinFormApp
             {
                 using var db = new QuanLyDbContext();
 
-                // Bước 2: Tìm bản ghi ở cả 2 bảng theo khóa chính.
                 Nguoi? nguoiCanXoa = db.Nguois.Find(ten);
                 Diem? diemCanXoa = db.Diems.Find(ten);
 
@@ -253,32 +378,157 @@ namespace DBDemoWinFormApp
                     return;
                 }
 
-                // Bước 3: Đánh dấu Remove ở cả 2 bảng rồi lưu bằng 1 lần SaveChanges().
-                if (diemCanXoa != null)
-                {
-                    db.Diems.Remove(diemCanXoa);
-                }
-                if (nguoiCanXoa != null)
-                {
-                    db.Nguois.Remove(nguoiCanXoa);
-                }
-
+                if (diemCanXoa != null) db.Diems.Remove(diemCanXoa);
+                if (nguoiCanXoa != null) db.Nguois.Remove(nguoiCanXoa);
                 db.SaveChanges();
 
-                // Bước 4: Xóa trắng ô nhập và tải lại bảng.
                 XoaOThongTin();
-                TaiDuLieuGop(txtTimKiem.Text.Trim());
+                NapDanhSachDiaChi();
+                TaiDuLieuGop();
                 MessageBox.Show("Đã xóa dữ liệu khỏi cả NGUOI và DIEM!", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Lỗi khi xóa dữ liệu:\n" + ex.Message, "Lỗi CSDL", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show("Lỗi khi xóa dữ liệu:\n" + (ex.InnerException?.Message ?? ex.Message), "Lỗi CSDL", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
         /// <summary>
-        /// Hàm phụ trợ đọc và kiểm tra tính hợp lệ của cả 5 ô nhập (dùng chung cho Thêm và Sửa).
+        /// Giao dịch hàng loạt & Rollback: Cộng +0.5 điểm Toán cho các bản ghi đang lọc trên Form4 trong 1 Transaction.
         /// </summary>
+        private void btnBatch_Click(object? sender, EventArgs e)
+        {
+            try
+            {
+                using var db = new QuanLyDbContext();
+                List<string> dsTen = XayDungTruyVanLoc(db).Select(x => x.Ten).ToList();
+
+                if (dsTen.Count == 0)
+                {
+                    MessageBox.Show("Không có bản ghi nào trong danh sách lọc.", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    return;
+                }
+
+                DialogResult confirm = MessageBox.Show(
+                    $"Cộng +0.5 điểm Toán cho các học sinh có trong {dsTen.Count} dòng đang lọc?\n(Nếu có ai vượt quá 10 điểm, Trigger SQL Server sẽ chặn và Rollback toàn bộ!).",
+                    "Xác nhận Giao dịch hàng loạt",
+                    MessageBoxButtons.YesNo,
+                    MessageBoxIcon.Question);
+
+                if (confirm != DialogResult.Yes) return;
+
+                using var transaction = db.Database.BeginTransaction();
+                try
+                {
+                    List<Diem> entities = db.Diems.Where(d => dsTen.Contains(d.Hoten)).ToList();
+                    foreach (Diem d in entities)
+                    {
+                        d.Toan = Math.Round(d.Toan + 0.5, 2);
+                    }
+
+                    db.SaveChanges();
+                    transaction.Commit();
+
+                    TaiDuLieuGop();
+                    MessageBox.Show($"Đã Commit thành công: cộng +0.5 điểm Toán cho {entities.Count} bản ghi!", "Transaction Commit", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+                catch (Exception ex)
+                {
+                    transaction.Rollback();
+                    MessageBox.Show(
+                        "Giao dịch hàng loạt đã bị HỦY (Rollback) toàn bộ!\nNguyên nhân: " + (ex.InnerException?.Message ?? ex.Message),
+                        "Transaction Rollback",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Error);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Lỗi khởi tạo giao dịch:\n" + ex.Message, "Lỗi CSDL", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        /// <summary>
+        /// Nhập hàng loạt từ file CSV (5 cột: ten, tuoi, dchi, toan, van) vào cả 2 bảng trong 1 Transaction.
+        /// </summary>
+        private void btnNhapCsv_Click(object? sender, EventArgs e)
+        {
+            if (!CsvHelper.DocFileCsv(out List<string[]> cacDong))
+            {
+                return;
+            }
+
+            using var db = new QuanLyDbContext();
+            using var transaction = db.Database.BeginTransaction();
+            try
+            {
+                int soDongThem = 0;
+                for (int i = 0; i < cacDong.Count; i++)
+                {
+                    string[] cols = cacDong[i];
+                    if (cols.Length < 5)
+                    {
+                        throw new InvalidOperationException($"Dòng dữ liệu số {i + 1} thiếu cột (cần ít nhất 5 cột: Họ tên, Tuổi, Địa chỉ, Toán, Văn).");
+                    }
+
+                    string ten = cols[0].Trim();
+                    string dchi = cols[2].Trim();
+
+                    if (string.IsNullOrEmpty(ten) || string.IsNullOrEmpty(dchi))
+                    {
+                        throw new InvalidOperationException($"Dòng dữ liệu số {i + 1} có Họ tên hoặc Địa chỉ trống.");
+                    }
+
+                    if (!int.TryParse(cols[1].Trim(), out int tuoi))
+                    {
+                        throw new InvalidOperationException($"Dòng dữ liệu số {i + 1} ('{ten}') có Tuổi '{cols[1]}' không hợp lệ.");
+                    }
+
+                    if (!double.TryParse(cols[3].Trim().Replace(',', '.'), NumberStyles.Float, CultureInfo.InvariantCulture, out double toan) ||
+                        !double.TryParse(cols[4].Trim().Replace(',', '.'), NumberStyles.Float, CultureInfo.InvariantCulture, out double van))
+                    {
+                        throw new InvalidOperationException($"Dòng dữ liệu số {i + 1} ('{ten}') có điểm Toán/Văn không phải số.");
+                    }
+
+                    if (db.Nguois.Find(ten) != null || db.Diems.Find(ten) != null)
+                    {
+                        throw new InvalidOperationException($"Dòng dữ liệu số {i + 1}: '{ten}' đã tồn tại trong CSDL (trùng khóa chính).");
+                    }
+
+                    db.Nguois.Add(new Nguoi { Ten = ten, Tuoi = tuoi, Dchi = dchi });
+                    db.Diems.Add(new Diem { Hoten = ten, Toan = toan, Van = van });
+                    soDongThem++;
+                }
+
+                db.SaveChanges();
+                transaction.Commit();
+
+                NapDanhSachDiaChi();
+                TaiDuLieuGop();
+                MessageBox.Show($"Đã Import thành công {soDongThem} bản ghi vào cả NGUOI và DIEM!", "Nhập CSV thành công", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+            catch (Exception ex)
+            {
+                transaction.Rollback();
+                MessageBox.Show(
+                    "Import CSV thất bại — đã Rollback toàn bộ file:\n" + (ex.InnerException?.Message ?? ex.Message),
+                    "Import Rollback",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
+            }
+        }
+
+        private void btnXuatCsv_Click(object? sender, EventArgs e)
+        {
+            CsvHelper.XuatRaCsv(dgvKetQua, "DanhSach_NGUOI_DIEM.csv");
+        }
+
+        private void btnBieuDo_Click(object? sender, EventArgs e)
+        {
+            using var formBieuDo = new FormBieuDo();
+            formBieuDo.ShowDialog(this);
+        }
+
         private bool TryDocDuLieuNhap(out string ten, out int tuoi, out string dchi, out double toan, out double van)
         {
             ten = txtTen.Text.Trim();
@@ -325,9 +575,6 @@ namespace DBDemoWinFormApp
             return true;
         }
 
-        /// <summary>
-        /// Hàm phụ trợ xóa trống toàn bộ 5 ô nhập sau khi Thêm hoặc Xóa.
-        /// </summary>
         private void XoaOThongTin()
         {
             txtTen.Clear();
@@ -337,9 +584,6 @@ namespace DBDemoWinFormApp
             txtVan.Clear();
         }
 
-        /// <summary>
-        /// Sự kiện khi nhấn nút "Về Form 1": đóng Form4 để quay về Trang chính.
-        /// </summary>
         private void btnVeForm1_Click(object? sender, EventArgs e)
         {
             this.Close();

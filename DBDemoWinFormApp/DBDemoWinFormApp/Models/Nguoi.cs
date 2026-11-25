@@ -7,13 +7,9 @@ namespace DBDemoWinFormApp.Models
     /// <summary>
     /// Lớp Model đại diện cho 1 dòng dữ liệu trong bảng NGUOI(ten, tuoi, dchi) của SQL Server.
     /// </summary>
-    // [Table("NGUOI")]: Báo cho EF Core biết class Nguoi ánh xạ tới bảng tên "NGUOI" trong CSDL.
     [Table("NGUOI")]
     public class Nguoi
     {
-        // [Key]: Đánh dấu đây là khóa chính (Primary Key) để EF Core phân biệt từng dòng dữ liệu.
-        // [Column("ten")]: Ánh xạ thuộc tính Ten trong C# với cột "ten" trong SQL Server.
-        // [DisplayName(...)]: Tên tiêu đề cột hiển thị trên bảng DataGridView trong WinForms.
         [Key]
         [Column("ten")]
         [StringLength(100)]
@@ -28,5 +24,12 @@ namespace DBDemoWinFormApp.Models
         [StringLength(200)]
         [DisplayName("Địa chỉ")]
         public string Dchi { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Cột tính toán dẫn xuất ([NotMapped] - không lưu trong SQL Server, tự tính từ Tuoi khi hiển thị).
+        /// </summary>
+        [NotMapped]
+        [DisplayName("Nhóm tuổi")]
+        public string NhomTuoi => Tuoi < 20 ? "Dưới 20" : (Tuoi <= 25 ? "20 - 25 tuổi" : "Trên 25");
     }
 }

@@ -7,13 +7,9 @@ namespace DBDemoWinFormApp.Models
     /// <summary>
     /// Lớp Model đại diện cho 1 dòng dữ liệu trong bảng DIEM(hoten, toan, van) của SQL Server.
     /// </summary>
-    // [Table("DIEM")]: Ánh xạ class Diem với bảng "DIEM" trong CSDL QUANLY.
     [Table("DIEM")]
     public class Diem
     {
-        // [Key]: Khóa chính giúp EF Core định danh từng bản ghi khi đọc, sửa hoặc xóa.
-        // [Column("hoten")]: Ánh xạ thuộc tính Hoten với cột "hoten" trong SQL Server.
-        // [DisplayName(...)]: Tên cột hiển thị thân thiện khi gắn dữ liệu vào DataGridView.
         [Key]
         [Column("hoten")]
         [StringLength(100)]
@@ -27,5 +23,19 @@ namespace DBDemoWinFormApp.Models
         [Column("van")]
         [DisplayName("Điểm Văn")]
         public double Van { get; set; }
+
+        /// <summary>
+        /// Cột tính toán dẫn xuất ([NotMapped]): Điểm trung bình = (Toán + Văn) / 2.
+        /// </summary>
+        [NotMapped]
+        [DisplayName("Điểm TB")]
+        public double DiemTB => Math.Round((Toan + Van) / 2.0, 2);
+
+        /// <summary>
+        /// Cột tính toán dẫn xuất ([NotMapped]): Xếp loại học lực theo Điểm TB.
+        /// </summary>
+        [NotMapped]
+        [DisplayName("Xếp loại")]
+        public string XepLoai => DiemTB >= 8.0 ? "Giỏi" : (DiemTB >= 6.5 ? "Khá" : (DiemTB >= 5.0 ? "Trung bình" : "Yếu"));
     }
 }

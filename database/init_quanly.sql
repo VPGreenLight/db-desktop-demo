@@ -452,8 +452,69 @@ INSERT INTO dbo.DIEM (hoten, toan, van) VALUES
     (N'Vu Thi Tien', 4, 8.75);
 GO
 
--- 6. Truy vấn kiểm tra số lượng bản ghi sau khi seed
+-- 6. Tạo VIEW gộp 2 bảng NGUOI và DIEM (dùng cho Form4 và FormBieuDo)
+CREATE OR ALTER VIEW dbo.vw_NguoiDiem
+AS
+SELECT
+    n.ten  AS Ten,
+    n.tuoi AS Tuoi,
+    n.dchi AS Dchi,
+    d.toan AS Toan,
+    d.van  AS Van
+FROM dbo.NGUOI AS n
+LEFT JOIN dbo.DIEM AS d ON n.ten = d.hoten;
+GO
+
+-- 7. Tạo STORED PROCEDURE thống kê số lượng người, tuổi TB và điểm TB theo từng Địa chỉ
+CREATE OR ALTER PROCEDURE dbo.sp_ThongKeTheoDiaChi
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT
+        n.dchi AS DiaChi,
+        COUNT(*) AS SoNguoi,
+        ROUND(AVG(CAST(n.tuoi AS FLOAT)), 1) AS TuoiTB,
+        ROUND(AVG((ISNULL(d.toan, 0) + ISNULL(d.van, 0)) / 2.0), 2) AS DiemTB
+    FROM dbo.NGUOI AS n
+    LEFT JOIN dbo.DIEM AS d ON n.ten = d.hoten
+    GROUP BY n.dchi
+    ORDER BY SoNguoi DESC, n.dchi ASC;
+END
+GO
+
+-- 8. Tạo TRIGGER kiểm tra tính hợp lệ dữ liệu ngay tại tầng SQL Server
+CREATE OR ALTER TRIGGER dbo.trg_KiemTraTuoiHopLe
+ON dbo.NGUOI
+AFTER INSERT, UPDATE
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    IF EXISTS (SELECT 1 FROM inserted WHERE tuoi < 0 OR tuoi > 150)
+    BEGIN
+        THROW 50001, N'Trigger SQL Server (trg_KiemTraTuoiHopLe): Tuổi phải từ 0 đến 150!', 1;
+    END
+END
+GO
+
+CREATE OR ALTER TRIGGER dbo.trg_KiemTraDiemHopLe
+ON dbo.DIEM
+AFTER INSERT, UPDATE
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    IF EXISTS (SELECT 1 FROM inserted WHERE toan < 0 OR toan > 10 OR van < 0 OR van > 10)
+    BEGIN
+        THROW 50002, N'Trigger SQL Server (trg_KiemTraDiemHopLe): Điểm Toán và Văn phải từ 0 đến 10!', 1;
+    END
+END
+GO
+
+-- 9. Truy vấn kiểm tra số lượng bản ghi, View và Stored Procedure sau khi khởi tạo
 SELECT COUNT(*) AS TongSoNguoi FROM dbo.NGUOI;
 SELECT COUNT(*) AS TongSoDiem FROM dbo.DIEM;
-SELECT dchi, COUNT(*) AS SoLuong FROM dbo.NGUOI GROUP BY dchi ORDER BY SoLuong DESC;
+SELECT TOP 5 * FROM dbo.vw_NguoiDiem ORDER BY Ten;
+EXEC dbo.sp_ThongKeTheoDiaChi;
 GO
